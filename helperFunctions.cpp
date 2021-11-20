@@ -7,6 +7,38 @@
 #include "helperFunctions.h"
 using namespace std;
 
+water_grid::water_grid(float Lx_in, float Lz_in, int M_in, int N_in) {
+    Lx = Lx_in;
+    Lz = Lz_in;
+    M = M_in;
+    N = N_in;
+    Kx = vector<float>(N, 0.0);
+    Kz = vector<float>(M, 0.0);
+    for (int i = 0; i < N; i++) {
+        fourier_grid_t0.push_back(vector<complex<float> >(M, 0.0));
+        current_grid.push_back(vector<complex<float> >(M, 0.0));
+    }
+}
+
+void water_grid::build_wave_vectors() {
+    for (int n = -N / 2; n < N / 2; n++) {
+        Kx[n + N / 2] = 2 * M_PI * n / Lx;
+    }
+    for (int m = -M / 2; m < M / 2; m++) {
+        Kz[m + M / 2] = 2 * M_PI * m / Lz;
+    }
+}
+
+void water_grid::height_grid_fourier_t0() {
+    for (int i = 0; i < Kx.size(); i++) {
+        for (int j = 0; j < Kz.size(); j++) {
+            glm::vec2 k(Kx[i], Kz[j]);
+            float Ph = phillips_spectrum(amplitude, k, wind_vector);
+            fourier_grid_t0[i][j] = height_point_fourier_t0(k, Ph);
+        }
+    }
+}
+
 float phillips_spectrum(float amplitude, glm::vec2 wave_vector, glm::vec2 wind_vector) {
     float k = glm::length(wave_vector);
     float V = glm::length(wind_vector);
@@ -15,14 +47,12 @@ float phillips_spectrum(float amplitude, glm::vec2 wave_vector, glm::vec2 wind_v
     return amplitude * exp(-1.0 / pow(k * L, 2.0)) / pow(k, 4.0) * pow(dot_product, 2.0);
 }
 
-glm::vec2 height_fourier_space(glm::vec2 wave_vector, float Ph) {
+complex<float> height_point_fourier_t0(glm::vec2 wave_vector, float Ph) {
     default_random_engine rng;
     normal_distribution<float> distribution(0.0, 1.0);
     float ran1 = distribution(rng);
     float ran2 = distribution(rng);
-    float real = 1.0 / pow(2.0, 0.5) * ran1 * pow(Ph, 0.5);
-    float imaginary = 1.0 / pow(2.0, 0.5) * ran2 * pow(Ph, 0.5);
-    return glm::vec2(real, imaginary);
+    return (complex<float>) (sqrt(Ph) / sqrt(2.0)) * complex<float>(ran1, ran2);
 }
 
 vector<complex<float> > fft(vector<complex<float> > &input, float sign) {

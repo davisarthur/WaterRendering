@@ -75,6 +75,26 @@ vector<complex<float> > fft(vector<complex<float> > &input, float sign) {
     }
 }
 
+vector<vector<complex<float> > > fft2d(vector<vector<complex<float> > > &input, float sign) {
+    vector<vector<complex<float> > > row_transformed;
+
+    // perform FFT on all rows
+    for (int i = 0; i < input.size(); i++) {
+        row_transformed.push_back(fft(input[i], sign));
+    }
+
+    // perform FFT on all columns
+    vector<vector<complex<float> > > output;
+    transpose2d(row_transformed);
+    for (int i = 0; i < row_transformed.size(); i++) {
+        output.push_back(fft(row_transformed[i], sign));
+    }
+
+    // transpose to return to correct form
+    transpose2d(output);
+    return output;
+}
+
 pair<vector<complex<float> >, vector<complex<float> > > even_odd_split(vector<complex<float> > &input) {
     vector<complex<float> > even;
     vector<complex<float> > odd;
@@ -83,4 +103,16 @@ pair<vector<complex<float> >, vector<complex<float> > > even_odd_split(vector<co
         odd.push_back(input.at(i + 1));
     }
     return pair<vector<complex<float> >, vector<complex<float> > >(even, odd);
+}
+
+void transpose2d(vector<vector<complex<float> > > &A) {
+    vector<vector<complex<float> > > output;
+    for (int i = 0; i < A[0].size(); i++) {
+        vector<complex<float> > row;
+        for (int j = 0; j < A.size(); j++) {
+            row.push_back(A[j][i]);
+        }
+        output.push_back(row);
+    }
+    A = output;
 }

@@ -64,3 +64,10 @@ Returns:
     output - complex vector
 */
 vector<complex<float> > fft(vector<complex<float> > &input, float sign);
+
+vector<vector<complex<float> > > fft2d(vector<vector<complex<float> > > &input, float sign);
+
+/*
+Transpose 2D complex array made using vectors (array must be rectangular)
+*/
+void transpose2d(vector<vector<complex<float> > > &A);

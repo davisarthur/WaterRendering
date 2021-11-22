@@ -33,7 +33,7 @@ class water_grid {
         // current grid
         vector<vector<complex<float> > > current_grid;
 
-        water_grid(float Lx_in, float Lz_in, int M_in, int N_in);
+        water_grid(float Lx_in, float Lz_in, int M_in, int N_in, glm::vec2 wing_vector_in);
 
     private:
         void build_wave_vectors();
@@ -71,3 +71,5 @@ vector<vector<complex<float> > > fft2d(vector<vector<complex<float> > > &input, 
 Transpose 2D complex array made using vectors (array must be rectangular)
 */
 void transpose2d(vector<vector<complex<float> > > &A);
+
+string readFile(string fileName);

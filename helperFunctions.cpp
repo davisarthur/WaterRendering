@@ -1,3 +1,5 @@
+#include <iostream>
+#include <fstream>
 #include <vector>
 #include <math.h>
 #include <random>
@@ -7,13 +9,14 @@
 #include "helperFunctions.h"
 using namespace std;
 
-water_grid::water_grid(float Lx_in, float Lz_in, int M_in, int N_in) {
+water_grid::water_grid(float Lx_in, float Lz_in, int M_in, int N_in, glm::vec2 wind_vector_in) {
     Lx = Lx_in;
     Lz = Lz_in;
     M = M_in;
     N = N_in;
     Kx = vector<float>(N, 0.0);
     Kz = vector<float>(M, 0.0);
+    wind_vector = wind_vector_in;
     for (int i = 0; i < N; i++) {
         fourier_grid_t0.push_back(vector<complex<float> >(M, 0.0));
         current_grid.push_back(vector<complex<float> >(M, 0.0));
@@ -115,4 +118,20 @@ void transpose2d(vector<vector<complex<float> > > &A) {
         output.push_back(row);
     }
     A = output;
+}
+
+string readFile(string fileName) {
+   string output = "";
+   string line;
+   ifstream myfile(fileName);
+   if (myfile.is_open()) {
+      while (getline(myfile, line)) {
+         output += line + "\n";
+      }
+      myfile.close();
+   }
+
+   else cout << "Unable to open file: " << fileName;
+   
+   return output;
 }

@@ -9,11 +9,15 @@
 #include "helperFunctions.h"
 using namespace std;
 
+float GRAVITY = 9.81;
+
 water_grid::water_grid(float Lx_in, float Lz_in, int M_in, int N_in, glm::vec2 wind_vector_in) {
     Lx = Lx_in;
     Lz = Lz_in;
     M = M_in;
     N = N_in;
+    X = vector<float>(N, 0.0);
+    Z = vector<float>(M, 0.0);
     Kx = vector<float>(N, 0.0);
     Kz = vector<float>(M, 0.0);
     wind_vector = wind_vector_in;
@@ -21,14 +25,19 @@ water_grid::water_grid(float Lx_in, float Lz_in, int M_in, int N_in, glm::vec2 w
         fourier_grid_t0.push_back(vector<complex<float> >(M, 0.0));
         current_grid.push_back(vector<complex<float> >(M, 0.0));
     }
+    build_grid_positions();
+    //height_grid_fourier_t0();
+    //current_grid = fourier_grid_t0;
 }
 
-void water_grid::build_wave_vectors() {
+void water_grid::build_grid_positions() {
     for (int n = -N / 2; n < N / 2; n++) {
         Kx[n + N / 2] = 2 * M_PI * n / Lx;
+        X[n + N / 2] = n * Lx / N;
     }
     for (int m = -M / 2; m < M / 2; m++) {
         Kz[m + M / 2] = 2 * M_PI * m / Lz;
+        Z[m + M / 2] = m * Lz / M;
     }
 }
 
@@ -40,6 +49,37 @@ void water_grid::height_grid_fourier_t0() {
             fourier_grid_t0[i][j] = height_point_fourier_t0(k, Ph);
         }
     }
+}
+
+vector<glm::vec3> water_grid::gen_vertices() {
+    vector<glm::vec3> vertices;
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < M; j++) {
+            vertices.push_back(glm::vec3(X[i], current_grid[i][j].real(), Z[j]));
+        }
+    }
+    return vertices;
+}
+
+vector<Triangle> water_grid::gen_triangles() {
+    vector<glm::vec3> vertices = gen_vertices();
+    vector<Triangle> triangles;
+    for (int i = 0; i < N - 1; i++) {
+        for (int j = 0; j < M - 1; j++) {
+            int xhat = j * N + i;
+            glm::vec3 vertex1 = vertices.at(xhat);
+            glm::vec3 vertex2 = vertices.at(xhat + 1);
+            glm::vec3 vertex3 = vertices.at(xhat + N + 1);
+            glm::vec3 vertex4 = vertices.at(xhat + N);
+            Triangle t1; 
+            t1.vertex1 = vertex1; t1.vertex2 = vertex2; t1.vertex3 = vertex3;
+            Triangle t2;
+            t2.vertex1 = vertex1; t2.vertex2 = vertex3; t2.vertex3 = vertex4;
+            triangles.push_back(t1);
+            triangles.push_back(t2);
+        }
+    }
+    return triangles;
 }
 
 float phillips_spectrum(float amplitude, glm::vec2 wave_vector, glm::vec2 wind_vector) {

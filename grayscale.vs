@@ -1,9 +1,10 @@
 #version 330 core
 layout (location = 0) in vec3 aPos;
-out vec4 color;
+in mat4 transformMatrix;
+out vec3 color;
 void main()
 {
-   gl_Position = vec4(aPos, 1.0);
-   zpos = normalize(aPos).z;
-   color = vec4(zpos, zpos, zpos, 1);
+   gl_Position = transformMatrix * vec4(aPos, 1);
+   float ypos = normalize(aPos).y;
+   color = vec3(ypos, ypos, ypos);
 }

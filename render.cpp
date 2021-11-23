@@ -42,25 +42,8 @@ int main() {
     // // glew: load all OpenGL function pointers
     glewInit();
 
-    string shadingCode;
-    cout << "\nEnter 'p' for Phong shading or 'g' for Gouraud shading: ";
-    cin >> shadingCode;
-
-    string vertexShaderSourceString;
-    string fragmentShaderSourceString;
-    if (shadingCode == "p") {
-        vertexShaderSourceString = readFile("phong.vs");
-        fragmentShaderSourceString = readFile("phong.fs");
-    }
-    else if (shadingCode == "g") {
-        vertexShaderSourceString = readFile("gouraud.vs");
-        fragmentShaderSourceString = readFile("gouraud.fs");
-    }
-    else {
-        cout << "Invalid shading option! Defaulting to Phong shading." << endl;
-        vertexShaderSourceString = readFile("phong.vs");
-        fragmentShaderSourceString = readFile("phong.fs");
-    }
+    string vertexShaderSourceString = readFile("grayscale.vs");
+    string fragmentShaderSourceString = readFile("grayscale.fs");
     char* vertexShaderSource = &vertexShaderSourceString[0];
     char* fragmentShaderSource = &fragmentShaderSourceString[0];
 
@@ -102,13 +85,30 @@ int main() {
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
+    // transform matrix
+    glm::mat4 lookAt = glm::lookAt(glm::vec3(0.0, 100.0, 0.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+    glm::mat4 ortho = glm::ortho(-1.0, 1.0, -1.0, 1.0);
+    glm::mat4 transformMatrix = ortho * lookAt;
+    transformMatrix = glm::perspective((float) (M_PI / 3.0), (GLfloat) SCR_WIDTH / SCR_HEIGHT, 10.0f, 10000.0f) * lookAt;
+    GLint transformMatID = glGetUniformLocation(shaderProgram, "transformMatrix");
+    glUniformMatrix4fv(transformMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));
+
     // read in mesh data
-    float Lx = 100.0;
-    float Lz = 100.0;
+    float Lx = 1.0;
+    float Lz = 1.0;
     int M = 32;
     int N = 32;
     glm::vec2 wind_vector(1.0, 0.0);
     water_grid water(Lx, Lz, M, N, wind_vector);
+    vector<Triangle> triangles = water.gen_triangles();
+    int num_bytes = triangles.size() * sizeof(triangles[0]);
+    int vertex_size = sizeof(triangles[0].vertex1);
+
+    /*
+    for (int i = 0; i < triangles.size(); i += 2) {
+        cout << triangles[i].vertex1.x << ", " << triangles[i].vertex1.y << ", " << triangles[i].vertex1.z << endl;
+    }
+    */
 
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
@@ -117,9 +117,9 @@ int main() {
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, model.numBytes, model.triangles.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, num_bytes, triangles.data(), GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, model.vertexSize, (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertex_size, (void*)0);
     glEnableVertexAttribArray(0);
 
     // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
@@ -131,20 +131,16 @@ int main() {
 
 
     // uncomment this call to draw in wireframe polygons.
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // use z-buffer
-    int zBufferSaveCount = 0;
-    glEnable(GL_DEPTH_TEST);
-    GLfloat zBufferData[SCR_HEIGHT * SCR_WIDTH];
-
-    bool reading = false;
+    //glEnable(GL_DEPTH_TEST);
 
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window)) {
         // clear z buffer
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  
+        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  
 
         // input
         // -----
@@ -157,8 +153,9 @@ int main() {
 
         // draw our first triangle
         glUseProgram(shaderProgram);
+        glUniformMatrix4fv(transformMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));
         glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
-        glDrawArrays(GL_TRIANGLES, 0, model.triangles.size() * 3);
+        glDrawArrays(GL_TRIANGLES, 0, triangles.size() * 3);
         // glBindVertexArray(0); // no need to unbind it every time 
  
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)

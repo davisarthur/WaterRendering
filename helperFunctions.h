@@ -5,9 +5,11 @@
 #include "glm/ext.hpp"
 using namespace std;
 
-float GRAVITY = 9.81f;
-float BACKWARD_FFT = -1.0f;
-float FORWARD_FFT = 1.0f;
+struct Triangle {
+    glm::vec3 vertex1;
+    glm::vec3 vertex2;
+    glm::vec3 vertex3;
+};
 
 class water_grid {
     public:
@@ -19,6 +21,10 @@ class water_grid {
         int M;
         int N;
         
+        // vectors containing all x and z positions in the water grid
+        vector<float> X;
+        vector<float> Z;
+
         // vectors containing all kx and all ky values in the water grid
         vector<float> Kx;
         vector<float> Kz;
@@ -34,10 +40,12 @@ class water_grid {
         vector<vector<complex<float> > > current_grid;
 
         water_grid(float Lx_in, float Lz_in, int M_in, int N_in, glm::vec2 wing_vector_in);
+        vector<Triangle> gen_triangles();
 
     private:
-        void build_wave_vectors();
+        void build_grid_positions();
         void height_grid_fourier_t0();
+        vector<glm::vec3> gen_vertices();
 };
 
 /*

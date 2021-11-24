@@ -85,14 +85,6 @@ int main() {
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    // transform matrix
-    glm::mat4 lookAt = glm::lookAt(glm::vec3(0.0, 100.0, 0.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-    glm::mat4 ortho = glm::ortho(-1.0, 1.0, -1.0, 1.0);
-    glm::mat4 transformMatrix = ortho * lookAt;
-    transformMatrix = glm::perspective((float) (M_PI / 3.0), (GLfloat) SCR_WIDTH / SCR_HEIGHT, 10.0f, 10000.0f) * lookAt;
-    GLint transformMatID = glGetUniformLocation(shaderProgram, "transformMatrix");
-    glUniformMatrix4fv(transformMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));
-
     // read in mesh data
     float Lx = 1.0;
     float Lz = 1.0;
@@ -101,14 +93,20 @@ int main() {
     glm::vec2 wind_vector(1.0, 0.0);
     water_grid water(Lx, Lz, M, N, wind_vector);
     vector<Triangle> triangles = water.gen_triangles();
-    int num_bytes = triangles.size() * sizeof(triangles[0]);
-    int vertex_size = sizeof(triangles[0].vertex1);
 
     /*
     for (int i = 0; i < triangles.size(); i += 2) {
         cout << triangles[i].vertex1.x << ", " << triangles[i].vertex1.y << ", " << triangles[i].vertex1.z << endl;
     }
     */
+    
+    int numBytes = triangles.size() * sizeof(triangles[0]);
+    int vertexSize = sizeof(triangles[0].vertex1);
+    glm::mat4 lookAt = glm::lookAt(glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(1.0, 0.0, 0.0));
+    glm::mat4 projMatrix = glm::ortho(-0.5f, 0.5f, -0.5f, 0.5f, -10.0f, 10.0f);
+    glm::mat4 transformMatrix = projMatrix * lookAt;
+    GLint pMatID = glGetUniformLocation(shaderProgram, "transformMatrix");
+    glUniformMatrix4fv(pMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));
 
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
@@ -117,9 +115,9 @@ int main() {
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, num_bytes, triangles.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, numBytes, triangles.data(), GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertex_size, (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
     // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
@@ -133,15 +131,9 @@ int main() {
     // uncomment this call to draw in wireframe polygons.
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    // use z-buffer
-    //glEnable(GL_DEPTH_TEST);
-
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window)) {
-        // clear z buffer
-        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  
-
         // input
         // -----
         processInput(window);
@@ -153,7 +145,7 @@ int main() {
 
         // draw our first triangle
         glUseProgram(shaderProgram);
-        glUniformMatrix4fv(transformMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));
+        glUniformMatrix4fv(pMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));
         glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
         glDrawArrays(GL_TRIANGLES, 0, triangles.size() * 3);
         // glBindVertexArray(0); // no need to unbind it every time 

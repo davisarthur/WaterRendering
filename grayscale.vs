@@ -1,6 +1,6 @@
 #version 330 core
 layout (location = 0) in vec3 aPos;
-in mat4 transformMatrix;
+uniform mat4 transformMatrix;
 out vec3 color;
 void main()
 {

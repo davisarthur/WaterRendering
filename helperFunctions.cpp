@@ -17,10 +17,6 @@ water_grid::water_grid(float amplitude_in, float Lx_in, float Lz_in, int M_in, i
     Lz = Lz_in;
     M = M_in;
     N = N_in;
-    X = vector<float>(N, 0.0);
-    Z = vector<float>(M, 0.0);
-    Kx = vector<float>(N, 0.0);
-    Kz = vector<float>(M, 0.0);
     wind_vector = wind_vector_in;
     for (int i = 0; i < N; i++) {
         fourier_grid_t0.push_back(vector<complex<float> >(M, 0.0));
@@ -32,22 +28,22 @@ water_grid::water_grid(float amplitude_in, float Lx_in, float Lz_in, int M_in, i
 }
 
 void water_grid::build_grid_positions() {
-    
     for (int n = 0; n < N / 2; n++) {
         Kx.push_back(2 * M_PI * n / Lx);
-        X.push_back(n * Lx / N);
     }
     for (int n = -N / 2; n < 0; n++) {
         Kx.push_back(2 * M_PI * n / Lx);
-        X.push_back(n * Lx / N);
     }
-
     for (int m = 0; m < M / 2; m++) {
         Kz.push_back(2 * M_PI * m / Lz);
-        Z.push_back(m * Lz / M);
     }
     for (int m = -M / 2; m < 0; m++) {
         Kz.push_back(2 * M_PI * m / Lz);
+    }
+    for (int n = -N/2; n < N/2; n++) {
+        X.push_back(n * Lx / N);
+    }
+    for (int m = -M/2; m < M/2; m++) {
         Z.push_back(m * Lz / M);
     }
 }
@@ -55,9 +51,9 @@ void water_grid::build_grid_positions() {
 void water_grid::height_grid_fourier_t0() {
     for (int i = 0; i < Kx.size(); i++) {
         for (int j = 0; j < Kz.size(); j++) {
-            glm::vec2 k(Kx[i], Kz[j]);
-            float Ph = phillips_spectrum(amplitude, k, wind_vector);
-            fourier_grid_t0[i][j] = height_point_fourier_t0(k, Ph);
+            glm::vec2 wave_vector(Kx[i], Kz[j]);
+            float Ph = phillips_spectrum(amplitude, wave_vector, wind_vector);
+            fourier_grid_t0[i][j] = height_point_fourier_t0(wave_vector, Ph);
         }
     }
 }
@@ -123,42 +119,18 @@ vector<complex<float> > fft(vector<complex<float> > &input, float sign) {
         pair<vector<complex<float> >, vector<complex<float> > > even_odd = even_odd_split(input);
         vector<complex<float> > even = fft(even_odd.first, sign);
         vector<complex<float> > odd = fft(even_odd.second, sign);
-        
-        /*
-        cout << "N: " << N << endl;
-        cout << "input: ";
-        for (int i = 0; i < input.size(); i++) {
-            cout << input.at(i) << ", ";
-        }
-        cout << endl;
-        cout << "even: ";
-        for (int i = 0; i < odd.size(); i++) {
-            cout << even.at(i) << ", ";
-        }
-        cout << endl;
-        cout << "odd: ";
-        for (int i = 0; i < odd.size(); i++) {
-            cout << odd.at(i) << ", ";
-        }
-        cout << endl;
-        */
-
-        vector<complex<float> > output(N, 0.0f);
-        for (int k = 0; k < N / 2; k++) {
-            complex<float> p = even.at(k);
-            complex<float> q = odd.at(k) * complex<float>(cos(-2 * M_PI * k / N), sin(-2 * M_PI * k / N));
-            //cout << p << ", " << q << ", " << odd.at(k) << ", " << cos(-2 * M_PI * k / N) << ", " << sin(-2 * M_PI * k / N) << endl << endl;
-            output[k] = p + q;
-            output[k + N / 2] = p - q;
+        vector<complex<float> > output = vector<complex<float> >(N, 0.0);
+        for (int k = 0; k < N/2; k++) {
+            output[k] = even[k] + odd[k] * complex<float>(cos(-2.0 * M_PI * (k + N/2) / N), sin(-2.0 * M_PI * (k + N/2) / N));
+            output[k + N/2] = even[k] + odd[k] * complex<float>(cos(-2.0 * M_PI * k / N), sin(-2.0 * M_PI * k / N));
         }
         return output;
     }
 }
 
 vector<vector<complex<float> > > fft2d(vector<vector<complex<float> > > &input, float sign) {
-    vector<vector<complex<float> > > row_transformed;
-
     // perform FFT on all rows
+    vector<vector<complex<float> > > row_transformed;
     for (int i = 0; i < input.size(); i++) {
         row_transformed.push_back(fft(input[i], sign));
     }
@@ -179,8 +151,8 @@ pair<vector<complex<float> >, vector<complex<float> > > even_odd_split(vector<co
     vector<complex<float> > even;
     vector<complex<float> > odd;
     for (int i = 0; i < input.size() / 2; i++) {
-        even.push_back(input.at(i));
-        odd.push_back(input.at(i + 1));
+        even.push_back(input.at(2 * i));
+        odd.push_back(input.at(2 * i + 1));
     }
     return pair<vector<complex<float> >, vector<complex<float> > >(even, odd);
 }

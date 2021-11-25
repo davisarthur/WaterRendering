@@ -89,13 +89,13 @@ int main() {
     float amplitude = 1.0;
     float Lx = 10.0;
     float Lz = 10.0;
-    int M = 64;
-    int N = 64;
+    int M = 8;
+    int N = 8;
     glm::vec2 wind_vector(2.0, 0.0);
     water_grid water(amplitude, Lx, Lz, M, N, wind_vector);
     vector<Triangle> triangles = water.gen_triangles();
 
-    print_vector_2D(water.current_grid);
+    //print_vector_2D(water.current_grid);
     /*
     for (int i = 0; i < triangles.size(); i += 2) {
         cout << triangles[i].vertex1.x << ", " << triangles[i].vertex1.y << ", " << triangles[i].vertex1.z << endl;

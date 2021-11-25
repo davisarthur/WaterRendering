@@ -13,21 +13,19 @@ struct Triangle {
 
 class water_grid {
     public:
+        float min, max;
+
         // size of grid in position space
-        float Lx;
-        float Lz; 
+        float Lx, Lz; 
 
         // level of detail
-        int M;
-        int N;
+        int M, N;
         
         // vectors containing all x and z positions in the water grid
-        vector<float> X;
-        vector<float> Z;
+        vector<float> X, Z;
 
         // vectors containing all kx and all ky values in the water grid
-        vector<float> Kx;
-        vector<float> Kz;
+        vector<float> Kx, Kz;
 
         // wave properties
         glm::vec2 wind_vector;

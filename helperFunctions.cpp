@@ -11,7 +11,8 @@ using namespace std;
 
 float GRAVITY = 9.81;
 
-water_grid::water_grid(float Lx_in, float Lz_in, int M_in, int N_in, glm::vec2 wind_vector_in) {
+water_grid::water_grid(float amplitude_in, float Lx_in, float Lz_in, int M_in, int N_in, glm::vec2 wind_vector_in) {
+    amplitude = amplitude_in;
     Lx = Lx_in;
     Lz = Lz_in;
     M = M_in;
@@ -26,18 +27,28 @@ water_grid::water_grid(float Lx_in, float Lz_in, int M_in, int N_in, glm::vec2 w
         current_grid.push_back(vector<complex<float> >(M, 0.0));
     }
     build_grid_positions();
-    //height_grid_fourier_t0();
-    //current_grid = fourier_grid_t0;
+    height_grid_fourier_t0();
+    current_grid = fft2d(fourier_grid_t0, -1.0);
 }
 
 void water_grid::build_grid_positions() {
-    for (int n = -N / 2; n < N / 2; n++) {
-        Kx[n + N / 2] = 2 * M_PI * n / Lx;
-        X[n + N / 2] = n * Lx / N;
+    
+    for (int n = 0; n < N / 2; n++) {
+        Kx.push_back(2 * M_PI * n / Lx);
+        X.push_back(n * Lx / N);
     }
-    for (int m = -M / 2; m < M / 2; m++) {
-        Kz[m + M / 2] = 2 * M_PI * m / Lz;
-        Z[m + M / 2] = m * Lz / M;
+    for (int n = -N / 2; n < 0; n++) {
+        Kx.push_back(2 * M_PI * n / Lx);
+        X.push_back(n * Lx / N);
+    }
+
+    for (int m = 0; m < M / 2; m++) {
+        Kz.push_back(2 * M_PI * m / Lz);
+        Z.push_back(m * Lz / M);
+    }
+    for (int m = -M / 2; m < 0; m++) {
+        Kz.push_back(2 * M_PI * m / Lz);
+        Z.push_back(m * Lz / M);
     }
 }
 
@@ -87,7 +98,12 @@ float phillips_spectrum(float amplitude, glm::vec2 wave_vector, glm::vec2 wind_v
     float V = glm::length(wind_vector);
     float L = pow(V, 2.0) / GRAVITY;
     float dot_product = glm::dot(glm::normalize(wave_vector), glm::normalize(wind_vector));
-    return amplitude * exp(-1.0 / pow(k * L, 2.0)) / pow(k, 4.0) * pow(dot_product, 2.0);
+    if (k == 0) {
+        return 0.0;
+    }
+    else {
+        return amplitude * exp(-1.0 / pow(k * L, 2.0)) / pow(k, 4.0) * pow(dot_product, 2.0);
+    }
 }
 
 complex<float> height_point_fourier_t0(glm::vec2 wave_vector, float Ph) {
@@ -107,10 +123,31 @@ vector<complex<float> > fft(vector<complex<float> > &input, float sign) {
         pair<vector<complex<float> >, vector<complex<float> > > even_odd = even_odd_split(input);
         vector<complex<float> > even = fft(even_odd.first, sign);
         vector<complex<float> > odd = fft(even_odd.second, sign);
+        
+        /*
+        cout << "N: " << N << endl;
+        cout << "input: ";
+        for (int i = 0; i < input.size(); i++) {
+            cout << input.at(i) << ", ";
+        }
+        cout << endl;
+        cout << "even: ";
+        for (int i = 0; i < odd.size(); i++) {
+            cout << even.at(i) << ", ";
+        }
+        cout << endl;
+        cout << "odd: ";
+        for (int i = 0; i < odd.size(); i++) {
+            cout << odd.at(i) << ", ";
+        }
+        cout << endl;
+        */
+
         vector<complex<float> > output(N, 0.0f);
         for (int k = 0; k < N / 2; k++) {
             complex<float> p = even.at(k);
-            complex<float> q = odd.at(k) * complex<float>(cos(-2 * M_PI / (N * k)), sin(-2 * M_PI / (N * k)));
+            complex<float> q = odd.at(k) * complex<float>(cos(-2 * M_PI * k / N), sin(-2 * M_PI * k / N));
+            //cout << p << ", " << q << ", " << odd.at(k) << ", " << cos(-2 * M_PI * k / N) << ", " << sin(-2 * M_PI * k / N) << endl << endl;
             output[k] = p + q;
             output[k + N / 2] = p - q;
         }
@@ -174,4 +211,17 @@ string readFile(string fileName) {
    else cout << "Unable to open file: " << fileName;
    
    return output;
+}
+
+void print_vector(vector<complex<float> > &A) {
+    for (int i = 0; i < A.size() - 1; i++) {
+        cout << A.at(i) << ", ";
+    }
+    cout << A.at(A.size() - 1) << endl;
+}
+
+void print_vector_2D(vector<vector<complex<float> > > &A) {
+    for (int i = 0; i < A.size(); i++) {
+        print_vector(A.at(i));
+    }
 }

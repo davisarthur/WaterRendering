@@ -86,14 +86,16 @@ int main() {
     glDeleteShader(fragmentShader);
 
     // read in mesh data
-    float Lx = 1.0;
-    float Lz = 1.0;
-    int M = 32;
-    int N = 32;
-    glm::vec2 wind_vector(1.0, 0.0);
-    water_grid water(Lx, Lz, M, N, wind_vector);
+    float amplitude = 1.0;
+    float Lx = 10.0;
+    float Lz = 10.0;
+    int M = 64;
+    int N = 64;
+    glm::vec2 wind_vector(2.0, 0.0);
+    water_grid water(amplitude, Lx, Lz, M, N, wind_vector);
     vector<Triangle> triangles = water.gen_triangles();
 
+    print_vector_2D(water.current_grid);
     /*
     for (int i = 0; i < triangles.size(); i += 2) {
         cout << triangles[i].vertex1.x << ", " << triangles[i].vertex1.y << ", " << triangles[i].vertex1.z << endl;
@@ -103,7 +105,7 @@ int main() {
     int numBytes = triangles.size() * sizeof(triangles[0]);
     int vertexSize = sizeof(triangles[0].vertex1);
     glm::mat4 lookAt = glm::lookAt(glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(1.0, 0.0, 0.0));
-    glm::mat4 projMatrix = glm::ortho(-0.5f, 0.5f, -0.5f, 0.5f, -10.0f, 10.0f);
+    glm::mat4 projMatrix = glm::ortho(-Lx/2, Lx/2, -Lz/2, Lz/2, -10.0f, 10.0f);
     glm::mat4 transformMatrix = projMatrix * lookAt;
     GLint pMatID = glGetUniformLocation(shaderProgram, "transformMatrix");
     glUniformMatrix4fv(pMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));

@@ -39,7 +39,7 @@ class water_grid {
         // current grid
         vector<vector<complex<float> > > current_grid;
 
-        water_grid(float Lx_in, float Lz_in, int M_in, int N_in, glm::vec2 wing_vector_in);
+        water_grid(float amplitude_in, float Lx_in, float Lz_in, int M_in, int N_in, glm::vec2 wing_vector_in);
         vector<Triangle> gen_triangles();
 
     private:
@@ -81,3 +81,7 @@ Transpose 2D complex array made using vectors (array must be rectangular)
 void transpose2d(vector<vector<complex<float> > > &A);
 
 string readFile(string fileName);
+
+void print_vector(vector<complex<float> > &A);
+
+void print_vector_2D(vector<vector<complex<float> > > &A);

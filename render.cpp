@@ -93,10 +93,13 @@ int main() {
     int N = 128;
     glm::vec2 wind_vector(2.0, 0.0);
     water_grid water(amplitude, Lx, Lz, M, N, wind_vector);
+    float time = 0.0;
+    float fps = 30.0;
+    float delta_time = 1.0 / fps;
     vector<Triangle> triangles = water.gen_triangles();
 
     write_to_file("data/fourier_grid.txt", print_vector_2D(water.fourier_grid_t0));
-    write_to_file("data/water_grid.txt", print_vector_2D(water.current_grid));
+    write_to_file("data/water_grid.txt", print_vector_2D(water.position_grid));
     
     int numBytes = triangles.size() * sizeof(triangles[0]);
     int vertexSize = sizeof(triangles[0].vertex1);
@@ -123,11 +126,11 @@ int main() {
     glEnableVertexAttribArray(0);
 
     // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0); 
+    //glBindBuffer(GL_ARRAY_BUFFER, 0); 
 
     // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
     // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-    glBindVertexArray(0); 
+    //glBindVertexArray(0); 
 
     // uncomment this call to draw in wireframe polygons.
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -144,6 +147,12 @@ int main() {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        // update geometry
+        water.eval_position_grid(time);
+        triangles = water.gen_triangles();
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, numBytes, triangles.data(), GL_STATIC_DRAW);
+
         // draw our first triangle
         glUseProgram(shaderProgram);
         glUniformMatrix4fv(pMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));
@@ -157,6 +166,7 @@ int main() {
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
+        time += delta_time;
     }
 
     // optional: de-allocate all resources once they've outlived their purpose:

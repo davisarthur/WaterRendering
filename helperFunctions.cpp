@@ -23,11 +23,26 @@ water_grid::water_grid(float amplitude_in, float Lx_in, float Lz_in, int M_in, i
     wind_vector = wind_vector_in;
     for (int i = 0; i < N; i++) {
         fourier_grid_t0.push_back(vector<complex<float> >(M, 0.0));
-        current_grid.push_back(vector<complex<float> >(M, 0.0));
+        fourier_grid.push_back(vector<complex<float> >(M, 0.0));
+        omega_grid.push_back(vector<float>(M, 0.0));
+        position_grid.push_back(vector<complex<float> >(M, 0.0));
     }
     build_grid_positions();
     height_grid_fourier_t0();
-    current_grid = fft2d(fourier_grid_t0, -1.0);
+    //position_grid = fft2d(fourier_grid_t0, 1.0);
+    eval_position_grid(0.0);
+}
+
+void water_grid::eval_position_grid(float time) {
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < M; j++) {
+            float wt = omega_grid[i][j] * time;
+            fourier_grid[i][j] = fourier_grid_t0[i][j] * complex<float>(cos(wt), sin(wt)) 
+                + conj(fourier_grid_t0[N - i - 1][M - j - 1]) * complex<float>(cos(-wt), sin(-wt)); 
+        }
+    }
+    cout << time << endl;
+    position_grid = fft2d(fourier_grid, 1.0);
 }
 
 void water_grid::build_grid_positions() {
@@ -61,6 +76,8 @@ void water_grid::height_grid_fourier_t0() {
             float ran1 = distribution(rng);
             float ran2 = distribution(rng);
             fourier_grid_t0[i][j] = height_point_fourier_t0(wave_vector, Ph, ran1, ran2);
+            float k = glm::length(wave_vector);
+            omega_grid[i][j] = sqrt(k * GRAVITY);
         }
     }
 }
@@ -69,13 +86,13 @@ vector<glm::vec3> water_grid::gen_vertices() {
     vector<glm::vec3> vertices;
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < M; j++) {
-            if (current_grid[i][j].real() > max) {
-                max = current_grid[i][j].real();
+            if (position_grid[i][j].real() > max) {
+                max = position_grid[i][j].real();
             }
-            else if (current_grid[i][j].real() < min) {
-                min = current_grid[i][j].real();
+            else if (position_grid[i][j].real() < min) {
+                min = position_grid[i][j].real();
             }
-            vertices.push_back(glm::vec3(X[i], current_grid[i][j].real(), Z[j]));
+            vertices.push_back(glm::vec3(X[i], position_grid[i][j].real(), Z[j]));
         }
     }
     return vertices;

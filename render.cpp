@@ -89,18 +89,14 @@ int main() {
     float amplitude = 1.0;
     float Lx = 10.0;
     float Lz = 10.0;
-    int M = 8;
-    int N = 8;
+    int M = 128;
+    int N = 128;
     glm::vec2 wind_vector(2.0, 0.0);
     water_grid water(amplitude, Lx, Lz, M, N, wind_vector);
     vector<Triangle> triangles = water.gen_triangles();
 
-    //print_vector_2D(water.current_grid);
-    /*
-    for (int i = 0; i < triangles.size(); i += 2) {
-        cout << triangles[i].vertex1.x << ", " << triangles[i].vertex1.y << ", " << triangles[i].vertex1.z << endl;
-    }
-    */
+    write_to_file("data/fourier_grid.txt", print_vector_2D(water.fourier_grid_t0));
+    write_to_file("data/water_grid.txt", print_vector_2D(water.current_grid));
     
     int numBytes = triangles.size() * sizeof(triangles[0]);
     int vertexSize = sizeof(triangles[0].vertex1);
@@ -109,6 +105,10 @@ int main() {
     glm::mat4 transformMatrix = projMatrix * lookAt;
     GLint pMatID = glGetUniformLocation(shaderProgram, "transformMatrix");
     glUniformMatrix4fv(pMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));
+    GLint minID = glGetUniformLocation(shaderProgram, "miny");
+    glUniform1f(minID, water.min);
+    GLint maxID = glGetUniformLocation(shaderProgram, "maxy");
+    glUniform1f(maxID, water.max);
 
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
@@ -129,9 +129,8 @@ int main() {
     // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
     glBindVertexArray(0); 
 
-
     // uncomment this call to draw in wireframe polygons.
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // render loop
     // -----------
@@ -148,6 +147,8 @@ int main() {
         // draw our first triangle
         glUseProgram(shaderProgram);
         glUniformMatrix4fv(pMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));
+        glUniform1f(minID, water.min);
+        glUniform1f(maxID, water.max);
         glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
         glDrawArrays(GL_TRIANGLES, 0, triangles.size() * 3);
         // glBindVertexArray(0); // no need to unbind it every time 

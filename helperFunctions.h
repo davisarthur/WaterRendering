@@ -1,6 +1,8 @@
 #include <vector>
 #include <complex>
 #include <math.h>
+#include <string>
+#include <random>
 #include <glm/glm.hpp>
 #include "glm/ext.hpp"
 using namespace std;
@@ -13,7 +15,8 @@ struct Triangle {
 
 class water_grid {
     public:
-        float min, max;
+        float min;
+        float max;
 
         // size of grid in position space
         float Lx, Lz; 
@@ -56,7 +59,7 @@ Requires:
 Returns:
     height map value at t = 0 in Fourier space
 */
-complex<float> height_point_fourier_t0(glm::vec2 wave_vector, float Ph);
+complex<float> height_point_fourier_t0(glm::vec2 wave_vector, float Ph, float ran1, float ran2);
 
 /*
 */
@@ -80,6 +83,8 @@ void transpose2d(vector<vector<complex<float> > > &A);
 
 string readFile(string fileName);
 
-void print_vector(vector<complex<float> > &A);
+string print_vector(vector<complex<float> > &A);
 
-void print_vector_2D(vector<vector<complex<float> > > &A);
+string print_vector_2D(vector<vector<complex<float> > > &A);
+
+void write_to_file(string fname, string info);

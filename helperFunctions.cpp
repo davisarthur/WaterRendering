@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <math.h>
+#include <string>
 #include <random>
 #include <complex>
 #include <glm/glm.hpp>
@@ -17,6 +18,8 @@ water_grid::water_grid(float amplitude_in, float Lx_in, float Lz_in, int M_in, i
     Lz = Lz_in;
     M = M_in;
     N = N_in;
+    min = 0.0;
+    max = 0.0;
     wind_vector = wind_vector_in;
     for (int i = 0; i < N; i++) {
         fourier_grid_t0.push_back(vector<complex<float> >(M, 0.0));
@@ -49,11 +52,15 @@ void water_grid::build_grid_positions() {
 }
 
 void water_grid::height_grid_fourier_t0() {
+    default_random_engine rng;
+    normal_distribution<float> distribution(0.0, 1.0);
     for (int i = 0; i < Kx.size(); i++) {
         for (int j = 0; j < Kz.size(); j++) {
             glm::vec2 wave_vector(Kx[i], Kz[j]);
             float Ph = phillips_spectrum(amplitude, wave_vector, wind_vector);
-            fourier_grid_t0[i][j] = height_point_fourier_t0(wave_vector, Ph);
+            float ran1 = distribution(rng);
+            float ran2 = distribution(rng);
+            fourier_grid_t0[i][j] = height_point_fourier_t0(wave_vector, Ph, ran1, ran2);
         }
     }
 }
@@ -62,6 +69,12 @@ vector<glm::vec3> water_grid::gen_vertices() {
     vector<glm::vec3> vertices;
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < M; j++) {
+            if (current_grid[i][j].real() > max) {
+                max = current_grid[i][j].real();
+            }
+            else if (current_grid[i][j].real() < min) {
+                min = current_grid[i][j].real();
+            }
             vertices.push_back(glm::vec3(X[i], current_grid[i][j].real(), Z[j]));
         }
     }
@@ -102,11 +115,7 @@ float phillips_spectrum(float amplitude, glm::vec2 wave_vector, glm::vec2 wind_v
     }
 }
 
-complex<float> height_point_fourier_t0(glm::vec2 wave_vector, float Ph) {
-    default_random_engine rng;
-    normal_distribution<float> distribution(0.0, 1.0);
-    float ran1 = distribution(rng);
-    float ran2 = distribution(rng);
+complex<float> height_point_fourier_t0(glm::vec2 wave_vector, float Ph, float ran1, float ran2) {
     return (complex<float>) (sqrt(Ph) / sqrt(2.0)) * complex<float>(ran1, ran2);
 }
 
@@ -185,15 +194,28 @@ string readFile(string fileName) {
    return output;
 }
 
-void print_vector(vector<complex<float> > &A) {
+string print_vector(vector<complex<float> > &A) {
+    string output = "";
     for (int i = 0; i < A.size() - 1; i++) {
-        cout << A.at(i) << ", ";
+        complex<float> num = A.at(i);
+        output += "(" + to_string(num.real()) + ", " + to_string(num.imag()) + ")" + ", ";
     }
-    cout << A.at(A.size() - 1) << endl;
+    complex<float> num = A.at(A.size() - 1);
+    output += "(" + to_string(num.real()) + ", " + to_string(num.imag()) + ")" + "\n";
+    return output;
 }
 
-void print_vector_2D(vector<vector<complex<float> > > &A) {
+string print_vector_2D(vector<vector<complex<float> > > &A) {
+    string output;
     for (int i = 0; i < A.size(); i++) {
-        print_vector(A.at(i));
+        output += print_vector(A.at(i));
     }
+    return output;
+}
+
+void write_to_file(string fname, string info) {
+    ofstream myfile;
+    myfile.open(fname);
+    myfile << info << "\n";
+    myfile.close();
 }

@@ -7,10 +7,14 @@
 #include "glm/ext.hpp"
 using namespace std;
 
+struct Vertex {
+   glm::vec3 pos;
+   glm::vec3 normal;
+};
 struct Triangle {
-    glm::vec3 vertex1;
-    glm::vec3 vertex2;
-    glm::vec3 vertex3;
+    Vertex vertex1;
+    Vertex vertex2;
+    Vertex vertex3;
 };
 
 class water_grid {
@@ -46,7 +50,7 @@ class water_grid {
     private:
         void build_grid_positions();
         void height_grid_fourier_t0();
-        vector<glm::vec3> gen_vertices();
+        vector<Vertex> gen_vertices();
 };
 
 /*

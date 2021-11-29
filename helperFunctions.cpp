@@ -94,8 +94,8 @@ void water_grid::height_grid_fourier_t0() {
     }
 }
 
-vector<glm::vec3> water_grid::gen_vertices() {
-    vector<glm::vec3> vertices;
+vector<Vertex> water_grid::gen_vertices() {
+    vector<Vertex> vertices;
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < M; j++) {
             if (position_grid[i][j].real() > max) {
@@ -104,22 +104,27 @@ vector<glm::vec3> water_grid::gen_vertices() {
             else if (position_grid[i][j].real() < min) {
                 min = position_grid[i][j].real();
             }
-            vertices.push_back(glm::vec3(X[i], position_grid[i][j].real(), Z[j]));
+            glm::vec3 position(X[i], position_grid[i][j].real(), Z[j]);
+            glm::vec3 normal(-slope_grid_x[i][j].real(), 1.0, -slope_grid_z[i][j].real());
+            Vertex v;
+            v.pos = position;
+            v.normal = normal;
+            vertices.push_back(v);
         }
     }
     return vertices;
 }
 
 vector<Triangle> water_grid::gen_triangles() {
-    vector<glm::vec3> vertices = gen_vertices();
+    vector<Vertex> vertices = gen_vertices();
     vector<Triangle> triangles;
     for (int i = 0; i < N - 1; i++) {
         for (int j = 0; j < M - 1; j++) {
             int xhat = j * N + i;
-            glm::vec3 vertex1 = vertices.at(xhat);
-            glm::vec3 vertex2 = vertices.at(xhat + 1);
-            glm::vec3 vertex3 = vertices.at(xhat + N + 1);
-            glm::vec3 vertex4 = vertices.at(xhat + N);
+            Vertex vertex1 = vertices.at(xhat);
+            Vertex vertex2 = vertices.at(xhat + 1);
+            Vertex vertex3 = vertices.at(xhat + N + 1);
+            Vertex vertex4 = vertices.at(xhat + N);
             Triangle t1; 
             t1.vertex1 = vertex1; t1.vertex2 = vertex2; t1.vertex3 = vertex3;
             Triangle t2;

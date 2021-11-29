@@ -6,7 +6,7 @@ uniform float maxy;
 out vec3 color;
 void main()
 {
-   gl_Position = transformMatrix * vec4(aPos, 1);
+   gl_Position = transformMatrix * vec4(aPos.x, aPos.y * 0.05, aPos.z, 1);
    float ypos = (aPos.y - miny) / (maxy - miny);
    color = vec3(ypos, ypos, ypos);
 }

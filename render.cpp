@@ -89,8 +89,8 @@ int main() {
     float amplitude = 1.0;
     float Lx = 10.0;
     float Lz = 10.0;
-    int M = 128;
-    int N = 128;
+    int M = 64;
+    int N = 64;
     glm::vec2 wind_vector(2.0, 0.0);
     water_grid water(amplitude, Lx, Lz, M, N, wind_vector);
     float time = 0.0;
@@ -98,14 +98,26 @@ int main() {
     float delta_time = 1.0 / fps;
     vector<Triangle> triangles = water.gen_triangles();
 
+    /*
     write_to_file("data/fourier_grid.txt", print_vector_2D(water.fourier_grid_t0));
     write_to_file("data/water_grid.txt", print_vector_2D(water.position_grid));
+    */
     
     int numBytes = triangles.size() * sizeof(triangles[0]);
     int vertexSize = sizeof(triangles[0].vertex1);
-    glm::mat4 lookAt = glm::lookAt(glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(1.0, 0.0, 0.0));
-    glm::mat4 projMatrix = glm::ortho(-Lx/2, Lx/2, -Lz/2, Lz/2, -10.0f, 10.0f);
+
+    //glm::mat4 lookAt = glm::lookAt(glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(1.0, 0.0, 0.0));
+    //glm::mat4 projMatrix = glm::ortho(-Lx/2, Lx/2, -Lz/2, Lz/2, -10.0f, 10.0f);
+    //glm::mat4 transformMatrix = projMatrix * lookAt;
+
+    float fov = 60.0f * M_PI / 180.0f;
+    float aspect = (float) SCR_WIDTH / SCR_HEIGHT;
+    float znear = 0.1;
+    float zfar = 1000.0;
+    glm::mat4 lookAt = glm::lookAt(glm::vec3(-15.0, 3.0, 0.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+    glm::mat4 projMatrix = glm::perspective(fov, aspect, znear, zfar);
     glm::mat4 transformMatrix = projMatrix * lookAt;
+
     GLint pMatID = glGetUniformLocation(shaderProgram, "transformMatrix");
     glUniformMatrix4fv(pMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));
     GLint minID = glGetUniformLocation(shaderProgram, "miny");
@@ -148,7 +160,7 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         // update geometry
-        water.eval_position_grid(time);
+        water.eval_grids(time);
         triangles = water.gen_triangles();
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferData(GL_ARRAY_BUFFER, numBytes, triangles.data(), GL_STATIC_DRAW);

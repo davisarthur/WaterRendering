@@ -26,14 +26,15 @@ water_grid::water_grid(float amplitude_in, float Lx_in, float Lz_in, int M_in, i
         fourier_grid.push_back(vector<complex<float> >(M, 0.0));
         omega_grid.push_back(vector<float>(M, 0.0));
         position_grid.push_back(vector<complex<float> >(M, 0.0));
+        slope_grid_x.push_back(vector<complex<float> >(M, 0.0));
+        slope_grid_z.push_back(vector<complex<float> >(M, 0.0));
     }
     build_grid_positions();
     height_grid_fourier_t0();
-    //position_grid = fft2d(fourier_grid_t0, 1.0);
-    eval_position_grid(0.0);
+    eval_grids(0.0);
 }
 
-void water_grid::eval_position_grid(float time) {
+void water_grid::eval_grids(float time) {
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < M; j++) {
             float wt = omega_grid[i][j] * time;
@@ -41,8 +42,19 @@ void water_grid::eval_position_grid(float time) {
                 + conj(fourier_grid_t0[N - i - 1][M - j - 1]) * complex<float>(cos(-wt), sin(-wt)); 
         }
     }
-    cout << time << endl;
     position_grid = fft2d(fourier_grid, 1.0);
+    slope_fourier_grids();
+}
+
+void water_grid::slope_fourier_grids() {
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < M; j++) {
+            slope_grid_x[i][j] = complex<float>(0.0, Kx[i]) * fourier_grid[i][j];
+            slope_grid_z[i][j] = complex<float>(0.0, Kz[j]) * fourier_grid[i][j];
+        }
+    }
+    slope_grid_x = fft2d(slope_grid_x, 1.0);
+    slope_grid_z = fft2d(slope_grid_z, 1.0);
 }
 
 void water_grid::build_grid_positions() {

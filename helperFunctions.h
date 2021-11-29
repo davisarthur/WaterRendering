@@ -35,11 +35,12 @@ class water_grid {
         float amplitude;
 
         // fourier grid t = 0
-        vector<vector<complex<float> > > fourier_grid_t0, fourier_grid, position_grid;
+        vector<vector<complex<float> > > fourier_grid_t0, fourier_grid, position_grid, slope_grid_x, slope_grid_z;
         vector<vector<float> > omega_grid;
 
         water_grid(float amplitude_in, float Lx_in, float Lz_in, int M_in, int N_in, glm::vec2 wing_vector_in);
-        void eval_position_grid(float time);
+        void eval_grids(float time);
+        void slope_fourier_grids();
         vector<Triangle> gen_triangles();
 
     private:

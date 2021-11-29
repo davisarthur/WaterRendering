@@ -92,3 +92,5 @@ string print_vector(vector<complex<float> > &A);
 string print_vector_2D(vector<vector<complex<float> > > &A);
 
 void write_to_file(string fname, string info);
+
+vector<complex<float> > random_vector(int N);

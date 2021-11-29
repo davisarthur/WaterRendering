@@ -162,10 +162,12 @@ vector<complex<float> > fft(vector<complex<float> > &input, float sign) {
         pair<vector<complex<float> >, vector<complex<float> > > even_odd = even_odd_split(input);
         vector<complex<float> > even = fft(even_odd.first, sign);
         vector<complex<float> > odd = fft(even_odd.second, sign);
+        cout << "even: " << print_vector(even) << endl;
+        cout << "odd: " << print_vector(odd) << endl;
         vector<complex<float> > output = vector<complex<float> >(N, 0.0);
         for (int k = 0; k < N/2; k++) {
-            output[k] = even[k] + odd[k] * complex<float>(cos(-2.0 * M_PI * (k + N/2) / N), sin(-2.0 * M_PI * (k + N/2) / N));
-            output[k + N/2] = even[k] + odd[k] * complex<float>(cos(-2.0 * M_PI * k / N), sin(-2.0 * M_PI * k / N));
+            output[k + N/2] = even[k] + odd[k] * complex<float>(cos(-2.0 * M_PI * (k + N/2) / N), sin(-2.0 * M_PI * (k + N/2) / N));
+            output[k] = even[k] + odd[k] * complex<float>(cos(-2.0 * M_PI * k / N), sin(-2.0 * M_PI * k / N));
         }
         return output;
     }
@@ -252,4 +254,13 @@ void write_to_file(string fname, string info) {
     myfile.open(fname);
     myfile << info << "\n";
     myfile.close();
+}
+
+vector<complex<float> > random_vector(int N) {
+    vector<complex<float> > output;
+    for (int i = 0; i < N; i++) {
+        float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        output.push_back(complex<float>(r, 0.0));
+    }
+    return output;
 }

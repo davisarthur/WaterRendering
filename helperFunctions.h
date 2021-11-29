@@ -9,7 +9,7 @@ using namespace std;
 
 struct Vertex {
    glm::vec3 pos;
-   glm::vec3 normal;
+   glm::vec2 slope_vector;
 };
 struct Triangle {
     Vertex vertex1;

@@ -105,10 +105,10 @@ vector<Vertex> water_grid::gen_vertices() {
                 min = position_grid[i][j].real();
             }
             glm::vec3 position(X[i], position_grid[i][j].real(), Z[j]);
-            glm::vec3 normal(-slope_grid_x[i][j].real(), 1.0, -slope_grid_z[i][j].real());
+            glm::vec2 slope_vector(-slope_grid_x[i][j].real(), -slope_grid_z[i][j].real());
             Vertex v;
             v.pos = position;
-            v.normal = normal;
+            v.slope_vector = slope_vector;
             vertices.push_back(v);
         }
     }
@@ -162,8 +162,6 @@ vector<complex<float> > fft(vector<complex<float> > &input, float sign) {
         pair<vector<complex<float> >, vector<complex<float> > > even_odd = even_odd_split(input);
         vector<complex<float> > even = fft(even_odd.first, sign);
         vector<complex<float> > odd = fft(even_odd.second, sign);
-        cout << "even: " << print_vector(even) << endl;
-        cout << "odd: " << print_vector(odd) << endl;
         vector<complex<float> > output = vector<complex<float> >(N, 0.0);
         for (int k = 0; k < N/2; k++) {
             output[k + N/2] = even[k] + odd[k] * complex<float>(cos(-2.0 * M_PI * (k + N/2) / N), sin(-2.0 * M_PI * (k + N/2) / N));

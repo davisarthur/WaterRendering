@@ -105,7 +105,7 @@ vector<Vertex> water_grid::gen_vertices() {
                 min = position_grid[i][j].real();
             }
             glm::vec3 position(X[i], position_grid[i][j].real(), Z[j]);
-            glm::vec2 slope_vector(-slope_grid_x[i][j].real(), -slope_grid_z[i][j].real());
+            glm::vec3 slope_vector(-slope_grid_x[i][j].real(), 0.0, -slope_grid_z[i][j].real());
             Vertex v;
             v.pos = position;
             v.slope_vector = slope_vector;

@@ -9,12 +9,16 @@ using namespace std;
 
 struct Vertex {
    glm::vec3 pos;
-   glm::vec2 slope_vector;
+   glm::vec3 slope_vector;
 };
 struct Triangle {
     Vertex vertex1;
     Vertex vertex2;
     Vertex vertex3;
+};
+
+class projected_grid {
+
 };
 
 class water_grid {

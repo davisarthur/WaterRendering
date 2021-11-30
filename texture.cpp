@@ -11,6 +11,7 @@
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
+unsigned int useShaders(string vertex_fname, string frag_fname);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -42,49 +43,6 @@ int main() {
     // // glew: load all OpenGL function pointers
     glewInit();
 
-    string vertexShaderSourceString = readFile("source.vs");
-    string fragmentShaderSourceString = readFile("source.fs");
-    char* vertexShaderSource = &vertexShaderSourceString[0];
-    char* fragmentShaderSource = &fragmentShaderSourceString[0];
-
-    // build and compile our shader program
-    // ------------------------------------
-    // vertex shader
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-    // check for shader compile errors
-    int success;
-    char infoLog[512];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-    // fragment shader
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-    // check for shader compile errors
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-    // link shaders
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    // check for linking errors
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-    }
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
     // read in mesh data
     float amplitude = 0.01;
     float Lx = 10.0;
@@ -97,29 +55,9 @@ int main() {
     float fps = 30.0;
     float delta_time = 1.0 / fps;
     vector<Triangle> triangles = water.gen_triangles();
-
-    water.eval_grids(5.0);
-    triangles = water.gen_triangles();
-
-    write_to_file("data/fourier_grid.txt", print_vector_2D(water.fourier_grid));
-    write_to_file("data/water_grid.txt", print_vector_2D(water.position_grid));
     
     int numBytes = triangles.size() * sizeof(triangles[0]);
     int vertexSize = sizeof(triangles[0].vertex1);
-
-    float fov = 60.0f * M_PI / 180.0f;
-    float aspect = (float) SCR_WIDTH / SCR_HEIGHT;
-    float znear = 0.1;
-    float zfar = 1000.0;
-    glm::vec3 eye = glm::vec3(-8.0, 2.0, 0.0);
-    glm::mat4 lookAt = glm::lookAt(eye, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-    glm::mat4 projMatrix = glm::perspective(fov, aspect, znear, zfar);
-    glm::mat4 transformMatrix = projMatrix * lookAt;
-
-    GLint pMatID = glGetUniformLocation(shaderProgram, "transformMatrix");
-    glUniformMatrix4fv(pMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));
-    GLint eyeID = glGetUniformLocation(shaderProgram, "eye");
-    glUniform3f(eyeID, eye.x, eye.y, eye.z);
 
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
@@ -164,13 +102,64 @@ int main() {
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferData(GL_ARRAY_BUFFER, numBytes, triangles.data(), GL_STATIC_DRAW);
 
-        // draw our first triangle
-        glUseProgram(shaderProgram);
+        // create frame buffer object
+        unsigned int fbo;
+        glGenFramebuffers(1, &fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+        // create texture
+        unsigned int texture;
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 600, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        // attach texture to frame buffer
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+
+        // make sure frame buffer object completed
+        if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+
+        // initialize shader program params
+        unsigned int shaderProgram = useShaders("shaders/data.vs", "shaders/data.fs");
+        glm::mat4 projMatrix = glm::ortho(-Lx/2, Lx/2, -Lz/2, Lz/2, -10.0f, 10.0f);
+        glm::mat4 transformMatrix = projMatrix;
+        GLint pMatID = glGetUniformLocation(shaderProgram, "transformMatrix");
         glUniformMatrix4fv(pMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));
-        glUniform3f(eyeID, eye.x, eye.y, eye.z);
-        glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+        GLint minID = glGetUniformLocation(shaderProgram, "miny");
+        glUniform1f(minID, water.min);
+        GLint maxID = glGetUniformLocation(shaderProgram, "maxy");
+        glUniform1f(maxID, water.max);
+
+        // draw our first triangle
+        glBindVertexArray(VAO); 
         glDrawArrays(GL_TRIANGLES, 0, triangles.size() * 3);
-        // glBindVertexArray(0); // no need to unbind it every time 
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        // draw texture
+        shaderProgram = useShaders("shaders/texture.vs", "shaders/texture.fs");
+        vector<glm::vec4> vertices;
+        vertices.push_back(glm::vec4(-1.0, -1.0, 0.0, 0.0));
+        vertices.push_back(glm::vec4(1.0, -1.0, 1.0, 0.0));
+        vertices.push_back(glm::vec4(-1.0, 1.0, 0.0, 1.0));
+        vertices.push_back(glm::vec4(1.0, -1.0, 1.0, 0.0));
+        vertices.push_back(glm::vec4(1.0, 1.0, 1.0, 1.0));
+        vertices.push_back(glm::vec4(-1.0, 1.0, 0.0, 1.0));
+
+        unsigned int VBO2, VAO2;
+        glGenVertexArrays(1, &VAO2);
+        glGenBuffers(1, &VBO2);
+        glBindVertexArray(VAO2);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+        glBufferData(GL_ARRAY_BUFFER, 4*vertices.size()*sizeof(float), vertices.data(), GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4*sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4*sizeof(float), (void*)(2*sizeof(float)));
+        glEnableVertexAttribArray(1);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glDrawArrays(GL_TRIANGLES, 0, vertices.size());
  
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -183,7 +172,7 @@ int main() {
     // ------------------------------------------------------------------------
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
-    glDeleteProgram(shaderProgram);
+    //glDeleteProgram(shaderProgram);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
@@ -204,4 +193,51 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
+}
+
+unsigned int useShaders(string vertex_fname, string frag_fname) {
+    string vertexShaderSourceString = readFile(vertex_fname);
+    string fragmentShaderSourceString = readFile(frag_fname);
+    char* vertexShaderSource = &vertexShaderSourceString[0];
+    char* fragmentShaderSource = &fragmentShaderSourceString[0];
+
+    // build and compile our shader program
+    // ------------------------------------
+    // vertex shader
+    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+    // check for shader compile errors
+    int success;
+    char infoLog[512];
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    // fragment shader
+    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
+    // check for shader compile errors
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    // link shaders
+    unsigned int shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+    // check for linking errors
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+    }
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+    glUseProgram(shaderProgram);
+    return shaderProgram;
 }

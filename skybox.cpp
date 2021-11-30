@@ -8,6 +8,8 @@
 #include <math.h>
 #include <iostream>
 #include <fstream>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -42,8 +44,8 @@ int main() {
     // // glew: load all OpenGL function pointers
     glewInit();
 
-    string vertexShaderSourceString = readFile("source.vs");
-    string fragmentShaderSourceString = readFile("source.fs");
+    string vertexShaderSourceString = readFile("skybox.vs");
+    string fragmentShaderSourceString = readFile("skybox.fs");
     char* vertexShaderSource = &vertexShaderSourceString[0];
     char* fragmentShaderSource = &fragmentShaderSourceString[0];
 
@@ -85,28 +87,6 @@ int main() {
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    // read in mesh data
-    float amplitude = 0.01;
-    float Lx = 10.0;
-    float Lz = 10.0;
-    int M = 64;
-    int N = 64;
-    glm::vec2 wind_vector(2.0, 0.0);
-    water_grid water(amplitude, Lx, Lz, M, N, wind_vector);
-    float time = 0.0;
-    float fps = 30.0;
-    float delta_time = 1.0 / fps;
-    vector<Triangle> triangles = water.gen_triangles();
-
-    water.eval_grids(5.0);
-    triangles = water.gen_triangles();
-
-    write_to_file("data/fourier_grid.txt", print_vector_2D(water.fourier_grid));
-    write_to_file("data/water_grid.txt", print_vector_2D(water.position_grid));
-    
-    int numBytes = triangles.size() * sizeof(triangles[0]);
-    int vertexSize = sizeof(triangles[0].vertex1);
-
     float fov = 60.0f * M_PI / 180.0f;
     float aspect = (float) SCR_WIDTH / SCR_HEIGHT;
     float znear = 0.1;
@@ -118,23 +98,97 @@ int main() {
 
     GLint pMatID = glGetUniformLocation(shaderProgram, "transformMatrix");
     glUniformMatrix4fv(pMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));
-    GLint eyeID = glGetUniformLocation(shaderProgram, "eye");
-    glUniform3f(eyeID, eye.x, eye.y, eye.z);
 
-    unsigned int VBO, VAO;
-    glGenVertexArrays(1, &VAO);
+    // create cube map
+    unsigned int cubemapTextureID;
+    glGenTextures(1, &cubemapTextureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTextureID);
+    vector<string> faces;
+    faces.push_back("skybox/right.png");
+    faces.push_back("skybox/left.png");
+    faces.push_back("skybox/top.png");
+    faces.push_back("skybox/bottom.png");
+    faces.push_back("skybox/front.png");
+    faces.push_back("skybox/back.png");
+
+    int width, height, nrChannels;
+    for (unsigned int i = 0; i < faces.size(); i++) {
+        unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        if (data) {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 
+                         0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
+            );
+            stbi_image_free(data);
+        }
+        else {
+            std::cout << "Cubemap tex failed to load at path: " << faces[i] << std::endl;
+            stbi_image_free(data);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    float skyboxVertices[] = {
+        // positions          
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+        1.0f,  1.0f, -1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+        1.0f, -1.0f,  1.0f
+    };
+    
+    unsigned int skyboxVAO, VBO;
+    glGenVertexArrays(1, &skyboxVAO);
     glGenBuffers(1, &VBO);
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-    glBindVertexArray(VAO);
-
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, numBytes, triangles.data(), GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertexSize, (void*)0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vertexSize, (void*)(sizeof(float) * 3));
-
+    glBufferData(GL_ARRAY_BUFFER, 36*sizeof(float), skyboxVertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
+
+    glDepthMask(GL_FALSE);
+    glBindVertexArray(skyboxVAO);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTextureID);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glDepthMask(GL_TRUE);
 
     // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
     //glBindBuffer(GL_ARRAY_BUFFER, 0); 
@@ -158,30 +212,25 @@ int main() {
         glClearColor(0.6f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // update geometry
-        water.eval_grids(time);
-        triangles = water.gen_triangles();
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, numBytes, triangles.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, 36*sizeof(float), skyboxVertices, GL_STATIC_DRAW);
 
         // draw our first triangle
         glUseProgram(shaderProgram);
         glUniformMatrix4fv(pMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));
-        glUniform3f(eyeID, eye.x, eye.y, eye.z);
-        glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
-        glDrawArrays(GL_TRIANGLES, 0, triangles.size() * 3);
+        glBindVertexArray(skyboxVAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+        glDrawArrays(GL_TRIANGLES, 0, 36);
         // glBindVertexArray(0); // no need to unbind it every time 
  
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
-        time += delta_time;
     }
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &VAO);
+    glDeleteVertexArrays(1, &skyboxVAO);
     glDeleteBuffers(1, &VBO);
     glDeleteProgram(shaderProgram);
 

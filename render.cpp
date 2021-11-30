@@ -42,8 +42,8 @@ int main() {
     // // glew: load all OpenGL function pointers
     glewInit();
 
-    string vertexShaderSourceString = readFile("source.vs");
-    string fragmentShaderSourceString = readFile("source.fs");
+    string vertexShaderSourceString = readFile("shaders/source.vs");
+    string fragmentShaderSourceString = readFile("shaders/source.fs");
     char* vertexShaderSource = &vertexShaderSourceString[0];
     char* fragmentShaderSource = &fragmentShaderSourceString[0];
 
@@ -97,9 +97,6 @@ int main() {
     float fps = 30.0;
     float delta_time = 1.0 / fps;
     vector<Triangle> triangles = water.gen_triangles();
-
-    water.eval_grids(5.0);
-    triangles = water.gen_triangles();
 
     write_to_file("data/fourier_grid.txt", print_vector_2D(water.fourier_grid));
     write_to_file("data/water_grid.txt", print_vector_2D(water.position_grid));

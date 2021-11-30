@@ -17,10 +17,6 @@ struct Triangle {
     Vertex vertex3;
 };
 
-class projected_grid {
-
-};
-
 class water_grid {
     public:
         float min;

@@ -80,17 +80,10 @@ int main() {
     float aspect = (float) SCR_WIDTH / SCR_HEIGHT;
     float znear = 0.2;
     float zfar = 100.0;
-    glm::vec3 eye = glm::vec3(-8.0, 1.0, 0.0);
+    glm::vec3 eye = glm::vec3(-8.0, 3.0, 0.0);
     glm::mat4 lookAt = glm::lookAt(eye, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
     glm::mat4 projMatrix = glm::perspective(fov, aspect, znear, zfar);
     glm::mat4 transform = projMatrix * lookAt;
-
-    /*
-    for (int i = 0; i < proj_grid.vertices.size(); i++) {
-        glm::vec4 vertex(proj_grid.vertices[i], 1.0);
-        cout << vertex.x << ", " << vertex.y << ", " << vertex.z << endl;
-    }
-    */
 
     // uncomment this call to draw in wireframe polygons.
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -183,9 +176,23 @@ int main() {
         GLint LxID = glGetUniformLocation(waterShader, "Lx");
         GLint LzID = glGetUniformLocation(waterShader, "Lz");
         GLint transformID = glGetUniformLocation(waterShader, "transform");
+        GLint eyeID = glGetUniformLocation(waterShader, "eye");
+        minID = glGetUniformLocation(waterShader, "minY");
+        maxID = glGetUniformLocation(waterShader, "maxY");
+        minSlopeXID = glGetUniformLocation(waterShader, "minSlopeX");
+        maxSlopeXID = glGetUniformLocation(waterShader, "maxSlopeX");
+        minSlopeZID = glGetUniformLocation(waterShader, "minSlopeZ");
+        maxSlopeZID = glGetUniformLocation(waterShader, "maxSlopeZ");
+        glUniform3f(eyeID, eye.x, eye.y, eye.z);
         glUniformMatrix4fv(transformID, 1, GL_FALSE, glm::value_ptr(transform));
         glUniform1f(LxID, water.Lx);
         glUniform1f(LzID, water.Lz);
+        glUniform1f(minID, water.min);
+        glUniform1f(maxID, water.max);
+        glUniform1f(maxSlopeXID, water.max_slope_x);
+        glUniform1f(minSlopeXID, water.min_slope_x);
+        glUniform1f(maxSlopeZID, water.max_slope_z);
+        glUniform1f(minSlopeZID, water.min_slope_z);
         
         // switch shader and bind texture
         glBindTexture(GL_TEXTURE_2D, texture);

@@ -8,7 +8,7 @@ out vec3 vertexPosition;
 out vec3 normal;
 
 void main() {
-   gl_Position = transformMatrix * vec4(aPos.x, aPos.y, aPos.z, 1);
+   gl_Position = transformMatrix * vec4(aPos, 1);
    vertexPosition = vec3(aPos);
    normal = normalize(vec3(-slopeVec.x, 1.0, -slopeVec.z));
 }

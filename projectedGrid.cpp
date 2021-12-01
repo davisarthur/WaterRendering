@@ -57,6 +57,7 @@ int main() {
     GLint projectionID = glGetUniformLocation(shaderProgram, "proj");
     GLint lookAtID = glGetUniformLocation(shaderProgram, "lookAt");
 
+    // construct projected grid
     int nx = 64;
     int ny = 64;
     ProjectedGrid proj_grid(nx, ny);

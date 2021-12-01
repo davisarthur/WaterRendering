@@ -13,39 +13,43 @@ using namespace std;
 
 float GRAVITY = 9.81;
 
-ProjectedGrid::ProjectedGrid(int nxIn, int nyIn) {
+ProjectedGrid::ProjectedGrid(int nxIn, int nyIn, float xMinIn, float xMaxIn, float zMinIn, float zMaxIn) {
     nx = nxIn;
-    ny = nyIn;
+    nz = nyIn;
+    xMin = xMinIn;
+    xMax = xMaxIn;
+    zMin = zMinIn;
+    zMax = zMaxIn;
     X = vector<float>(nx + 1, 0.0);
-    Y = vector<float>(ny + 1, 0.0);
+    Z = vector<float>(nz + 1, 0.0);
     triangles = gen_triangles();
 }
 
 vector<glm::vec3> ProjectedGrid::gen_vertices() {
     // generate grid
-    float deltaX = 2.0 / nx;
+    float deltaX = (xMax - xMin) / nx;
     for (int i = 0; i <= nx; i++) {
-        X[i] = -1.0 + i * deltaX;
+        X[i] = xMin + i * deltaX;
     }
     
-    float deltaY = 1.0 / ny;
-    for (int i = 0; i <= ny; i++) {
-        Y[i] = -1.0 + i * deltaY;
+    float deltaZ = (zMax - zMin) / nz;
+    for (int i = 0; i <= nz; i++) {
+        Z[i] = zMin + i * deltaZ;
     }
     vector<glm::vec3> vertices;
     for (int i = 0; i <= nx; i++) {
-        for (int j = 0; j <= ny; j++) {
-            vertices.push_back(glm::vec3(X[i], Y[j], 0.0));
+        for (int j = 0; j <= nz; j++) {
+            vertices.push_back(glm::vec3(X[i], 0.0, Z[j]));
         }
     }
     return vertices;
 }
 
 vector<glm::vec3> ProjectedGrid::gen_triangles() {
-    vector<glm::vec3> vertices = gen_vertices();
+    vertices = gen_vertices();
     vector<glm::vec3> triangles;
     for (int i = 0; i < nx; i++) {
-        for (int j = 0; j < ny; j++) {
+        for (int j = 0; j < nz; j++) {
             int xhat = j * (nx + 1) + i;
             glm::vec3 vertex1 = vertices.at(xhat);
             glm::vec3 vertex2 = vertices.at(xhat + nx + 1);

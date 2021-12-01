@@ -20,12 +20,14 @@ struct Triangle {
 class ProjectedGrid {
     public:
         int nx;
-        int ny;
+        int nz;
+        float xMin, xMax, zMin, zMax;
         vector<float> X;
-        vector<float> Y;
+        vector<float> Z;
         vector<glm::vec3> triangles;
+        vector<glm::vec3> vertices;
 
-        ProjectedGrid(int nxIn, int nyIn);
+        ProjectedGrid(int nxIn, int nyIn, float xMinIn, float xMaxIn, float zMinIn, float zMaxIn);
     
     private:
         vector<glm::vec3> gen_vertices();

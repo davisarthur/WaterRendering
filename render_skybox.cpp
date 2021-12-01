@@ -14,7 +14,7 @@
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 unsigned int loadCubemap(vector<std::string> faces);
-unsigned int useShaders(string vertex_fname, string frag_fname);
+unsigned int loadShaders(string vertex_fname, string frag_fname);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -46,19 +46,18 @@ int main() {
     // // glew: load all OpenGL function pointers
     glewInit();
 
-    unsigned int shaderProgram = useShaders("shaders/skybox.vs", "shaders/skybox.fs");
-
     float fov = 60.0f * M_PI / 180.0f;
     float aspect = (float) SCR_WIDTH / SCR_HEIGHT;
     float znear = 0.1;
     float zfar = 100.0;
-    glm::vec3 eye = glm::vec3(-0.8, 0.0, 0.0);
+    glm::vec3 eye = glm::vec3(-8.0, 1.0, 0.0);
     glm::mat4 lookAt = glm::lookAt(eye, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
     glm::mat4 projMatrix = glm::perspective(fov, aspect, znear, zfar);
-    glm::mat4 transformMatrix = projMatrix * glm::mat4(glm::mat3(lookAt));
+    glm::mat4 waterTransformMatrix = projMatrix * lookAt;
+    glm::mat4 skyboxTransformMatrix = projMatrix * glm::mat4(glm::mat3(lookAt));
 
-    GLint pMatID = glGetUniformLocation(shaderProgram, "transformMatrix");
-    glUniformMatrix4fv(pMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));
+    unsigned int skyboxShader = loadShaders("shaders/skybox.vs", "shaders/skybox.fs");
+    GLint skyboxTransformID = glGetUniformLocation(skyboxShader, "transformMatrix");
 
     // create cube map
     vector<string> faces;
@@ -114,23 +113,9 @@ int main() {
         -1.0f, -1.0f,  1.0f,
         1.0f, -1.0f,  1.0f
     };
-    
-    unsigned int skyboxVAO, skyboxVBO;
-    glGenVertexArrays(1, &skyboxVAO);
-    glGenBuffers(1, &skyboxVBO);
-    glBindVertexArray(skyboxVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glDepthMask(GL_FALSE);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTextureID);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    glDepthMask(GL_TRUE);
 
     // read in mesh data
-    float amplitude = 0.01;
+    float amplitude = 0.001;
     float Lx = 10.0;
     float Lz = 10.0;
     int M = 64;
@@ -141,6 +126,12 @@ int main() {
     float fps = 30.0;
     float delta_time = 1.0 / fps;
     vector<Triangle> triangles = water.gen_triangles();
+    int numBytes = triangles.size() * sizeof(triangles[0]);
+    int vertexSize = sizeof(triangles[0].vertex1);
+
+    unsigned int waterShader = loadShaders("shaders/source2.vs", "shaders/source2.fs");
+    GLint waterTransformID = glGetUniformLocation(waterShader, "transformMatrix");
+    GLint eyeID = glGetUniformLocation(waterShader, "eye");
 
     // uncomment this call to draw in wireframe polygons.
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -157,27 +148,58 @@ int main() {
         glClearColor(0.1f, 0.3f, 0.4f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        // render skybox
+        glUseProgram(skyboxShader);
+        unsigned int skyboxVAO, skyboxVBO;
+        glGenVertexArrays(1, &skyboxVAO);
+        glGenBuffers(1, &skyboxVBO);
+        glBindVertexArray(skyboxVAO);
         glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-        glBufferData(GL_ARRAY_BUFFER, 36*sizeof(float), &skyboxVertices, GL_STATIC_DRAW);
-
-        glUniformMatrix4fv(pMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));
-        glBindVertexArray(skyboxVAO); 
+        glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        glUniformMatrix4fv(skyboxTransformID, 1, GL_FALSE, glm::value_ptr(skyboxTransformMatrix));
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTextureID);
         glDrawArrays(GL_TRIANGLES, 0, 36);
-        // glBindVertexArray(0); // no need to unbind it every time 
+
+        // update water
+        water.eval_grids(time);
+        triangles = water.gen_triangles();
+
+        // render water
+        glUseProgram(waterShader);
+        unsigned int waterVAO, waterVBO;
+        glGenVertexArrays(1, &waterVAO);
+        glGenBuffers(1, &waterVBO);
+        glBindVertexArray(waterVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, waterVBO);
+        glBufferData(GL_ARRAY_BUFFER, numBytes, triangles.data(), GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertexSize, (void*)0);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vertexSize, (void*)(sizeof(float) * 3));
+        glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(1);
+        glUniform3f(eyeID, eye.x, eye.y, eye.z);
+        glUniformMatrix4fv(waterTransformID, 1, GL_FALSE, glm::value_ptr(waterTransformMatrix));
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTextureID);
+        glDrawArrays(GL_TRIANGLES, 0, triangles.size() * 3);
  
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        time += delta_time;
     }
 
+    /*
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
     glDeleteVertexArrays(1, &skyboxVAO);
     glDeleteBuffers(1, &skyboxVBO);
     glDeleteProgram(shaderProgram);
+    */
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
@@ -228,7 +250,7 @@ unsigned int loadCubemap(vector<std::string> faces) {
     return textureID;
 }
 
-unsigned int useShaders(string vertex_fname, string frag_fname) {
+unsigned int loadShaders(string vertex_fname, string frag_fname) {
     string vertexShaderSourceString = readFile(vertex_fname);
     string fragmentShaderSourceString = readFile(frag_fname);
     char* vertexShaderSource = &vertexShaderSourceString[0];
@@ -271,6 +293,5 @@ unsigned int useShaders(string vertex_fname, string frag_fname) {
     }
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
-    glUseProgram(shaderProgram);
     return shaderProgram;
 }

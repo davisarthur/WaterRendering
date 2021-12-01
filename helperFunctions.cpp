@@ -4,6 +4,7 @@
 #include <math.h>
 #include <string>
 #include <random>
+#include <limits>
 #include <complex>
 #include <glm/glm.hpp>
 #include "glm/ext.hpp"
@@ -12,14 +13,67 @@ using namespace std;
 
 float GRAVITY = 9.81;
 
+ProjectedGrid::ProjectedGrid(int nxIn, int nyIn) {
+    nx = nxIn;
+    ny = nyIn;
+    X = vector<float>(nx + 1, 0.0);
+    Y = vector<float>(ny + 1, 0.0);
+    triangles = gen_triangles();
+}
+
+vector<glm::vec3> ProjectedGrid::gen_vertices() {
+    // generate grid
+    float deltaX = 2.0 / nx;
+    for (int i = 0; i <= nx; i++) {
+        X[i] = -1.0 + i * deltaX;
+    }
+    
+    float deltaY = 1.0 / ny;
+    for (int i = 0; i <= ny; i++) {
+        Y[i] = -1.0 + i * deltaY;
+    }
+    vector<glm::vec3> vertices;
+    for (int i = 0; i <= nx; i++) {
+        for (int j = 0; j <= ny; j++) {
+            vertices.push_back(glm::vec3(X[i], Y[j], 0.0));
+        }
+    }
+    return vertices;
+}
+
+vector<glm::vec3> ProjectedGrid::gen_triangles() {
+    vector<glm::vec3> vertices = gen_vertices();
+    vector<glm::vec3> triangles;
+    for (int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
+            int xhat = j * (nx + 1) + i;
+            glm::vec3 vertex1 = vertices.at(xhat);
+            glm::vec3 vertex2 = vertices.at(xhat + nx + 1);
+            glm::vec3 vertex3 = vertices.at(xhat + nx + 2);
+            glm::vec3 vertex4 = vertices.at(xhat + 1);
+            triangles.push_back(vertex1);
+            triangles.push_back(vertex2);
+            triangles.push_back(vertex3);
+            triangles.push_back(vertex1);
+            triangles.push_back(vertex3);
+            triangles.push_back(vertex4);
+        }
+    }
+    return triangles;
+}
+
 water_grid::water_grid(float amplitude_in, float Lx_in, float Lz_in, int M_in, int N_in, glm::vec2 wind_vector_in) {
     amplitude = amplitude_in;
     Lx = Lx_in;
     Lz = Lz_in;
     M = M_in;
     N = N_in;
-    min = 0.0;
-    max = 0.0;
+    min = numeric_limits<float>::max();
+    max = numeric_limits<float>::min();
+    min_slope_x = numeric_limits<float>::max();
+    max_slope_x = numeric_limits<float>::min();
+    min_slope_z = numeric_limits<float>::max();
+    max_slope_z = numeric_limits<float>::min();
     wind_vector = wind_vector_in;
     for (int i = 0; i < N; i++) {
         fourier_grid_t0.push_back(vector<complex<float> >(M, 0.0));
@@ -98,14 +152,27 @@ vector<Vertex> water_grid::gen_vertices() {
     vector<Vertex> vertices;
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < M; j++) {
+            // update min/max as necessary
             if (position_grid[i][j].real() > max) {
                 max = position_grid[i][j].real();
             }
             else if (position_grid[i][j].real() < min) {
                 min = position_grid[i][j].real();
             }
+            if (slope_grid_x[i][j].real() > max_slope_x) {
+                max_slope_x = slope_grid_x[i][j].real();
+            }
+            else if (slope_grid_x[i][j].real() < min_slope_x) {
+                min_slope_x = slope_grid_x[i][j].real();
+            }
+            if (slope_grid_z[i][j].real() > max_slope_z) {
+                max_slope_z = slope_grid_z[i][j].real();
+            }
+            else if (slope_grid_z[i][j].real() < min_slope_z) {
+                min_slope_z = slope_grid_z[i][j].real();
+            }
             glm::vec3 position(X[i], position_grid[i][j].real(), Z[j]);
-            glm::vec3 slope_vector(-slope_grid_x[i][j].real(), 0.0, -slope_grid_z[i][j].real());
+            glm::vec3 slope_vector(slope_grid_x[i][j].real(), 0.0, slope_grid_z[i][j].real());
             Vertex v;
             v.pos = position;
             v.slope_vector = slope_vector;

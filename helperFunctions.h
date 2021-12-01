@@ -17,10 +17,24 @@ struct Triangle {
     Vertex vertex3;
 };
 
+class ProjectedGrid {
+    public:
+        int nx;
+        int ny;
+        vector<float> X;
+        vector<float> Y;
+        vector<glm::vec3> triangles;
+
+        ProjectedGrid(int nxIn, int nyIn);
+    
+    private:
+        vector<glm::vec3> gen_vertices();
+        vector<glm::vec3> gen_triangles();
+};
+
 class water_grid {
     public:
-        float min;
-        float max;
+        float min, max, min_slope_x, max_slope_x, min_slope_z, max_slope_z;
 
         // size of grid in position space
         float Lx, Lz; 

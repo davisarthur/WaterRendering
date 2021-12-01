@@ -129,9 +129,17 @@ int main() {
         GLint pMatID = glGetUniformLocation(shaderProgram, "transformMatrix");
         glUniformMatrix4fv(pMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));
         GLint minID = glGetUniformLocation(shaderProgram, "miny");
-        glUniform1f(minID, water.min);
         GLint maxID = glGetUniformLocation(shaderProgram, "maxy");
+        GLint minSlopeXID = glGetUniformLocation(shaderProgram, "minSlopeX");
+        GLint maxSlopeXID = glGetUniformLocation(shaderProgram, "maxSlopeX");
+        GLint minSlopeZID = glGetUniformLocation(shaderProgram, "minSlopeZ");
+        GLint maxSlopeZID = glGetUniformLocation(shaderProgram, "maxSlopeZ");
+        glUniform1f(minID, water.min);
         glUniform1f(maxID, water.max);
+        glUniform1f(maxSlopeXID, water.max_slope_x);
+        glUniform1f(minSlopeXID, water.min_slope_x);
+        glUniform1f(maxSlopeZID, water.max_slope_z);
+        glUniform1f(minSlopeZID, water.min_slope_z);
 
         // draw our first triangle
         glBindVertexArray(VAO); 

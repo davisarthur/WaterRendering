@@ -8,10 +8,13 @@
 #include <math.h>
 #include <iostream>
 #include <fstream>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 unsigned int loadShaders(string vertex_fname, string frag_fname);
+unsigned int loadCubemap(vector<std::string> faces);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -49,6 +52,64 @@ int main() {
     // load water shader
     unsigned int waterShader = loadShaders("shaders/water.vs", "shaders/water.fs");
 
+    // load skybox shader
+    unsigned int skyboxShader = loadShaders("shaders/skybox.vs", "shaders/skybox.fs");
+
+    // create cube map
+    vector<string> faces;
+    faces.push_back("skybox/right.jpg");
+    faces.push_back("skybox/left.jpg");
+    faces.push_back("skybox/top.jpg");
+    faces.push_back("skybox/bottom.jpg");
+    faces.push_back("skybox/front.jpg");
+    faces.push_back("skybox/back.jpg");
+    unsigned int cubemapTextureID = loadCubemap(faces);
+
+    float skyboxVertices[] = {
+        // positions          
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+        1.0f,  1.0f, -1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+        1.0f, -1.0f,  1.0f
+    };
+
     // construct water
     float amplitude = 0.01;
     float Lx = 10.0;
@@ -80,10 +141,11 @@ int main() {
     float aspect = (float) SCR_WIDTH / SCR_HEIGHT;
     float znear = 0.2;
     float zfar = 100.0;
-    glm::vec3 eye = glm::vec3(-8.0, 3.0, 0.0);
+    glm::vec3 eye = glm::vec3(-8.0, 0.5, 0.0);
     glm::mat4 lookAt = glm::lookAt(eye, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
     glm::mat4 projMatrix = glm::perspective(fov, aspect, znear, zfar);
     glm::mat4 transform = projMatrix * lookAt;
+    glm::mat4 skyboxTransformMatrix = projMatrix * glm::mat4(glm::mat3(lookAt));
 
     // uncomment this call to draw in wireframe polygons.
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -99,6 +161,22 @@ int main() {
         // ------
         glClearColor(0.6f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        // render skybox
+        GLint skyboxTransformID = glGetUniformLocation(skyboxShader, "transformMatrix");
+        glUseProgram(skyboxShader);
+        unsigned int skyboxVAO, skyboxVBO;
+        glGenVertexArrays(1, &skyboxVAO);
+        glGenBuffers(1, &skyboxVBO);
+        glBindVertexArray(skyboxVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        glUniformMatrix4fv(skyboxTransformID, 1, GL_FALSE, glm::value_ptr(skyboxTransformMatrix));
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTextureID);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // update geometry
         water.eval_grids(time);
@@ -183,8 +261,12 @@ int main() {
         maxSlopeXID = glGetUniformLocation(waterShader, "maxSlopeX");
         minSlopeZID = glGetUniformLocation(waterShader, "minSlopeZ");
         maxSlopeZID = glGetUniformLocation(waterShader, "maxSlopeZ");
+        GLint waterTextureID = glGetUniformLocation(waterShader, "waterTexture");
+        GLint skyboxID  = glGetUniformLocation(waterShader, "skybox");
         glUniform3f(eyeID, eye.x, eye.y, eye.z);
         glUniformMatrix4fv(transformID, 1, GL_FALSE, glm::value_ptr(transform));
+        glUniform1i(waterTextureID, 0);
+        glUniform1i(skyboxID,  1);
         glUniform1f(LxID, water.Lx);
         glUniform1f(LzID, water.Lz);
         glUniform1f(minID, water.min);
@@ -194,8 +276,11 @@ int main() {
         glUniform1f(maxSlopeZID, water.max_slope_z);
         glUniform1f(minSlopeZID, water.min_slope_z);
         
-        // switch shader and bind texture
+        // bind texture
+        glActiveTexture(GL_TEXTURE0 + 0); // Texture unit 0
         glBindTexture(GL_TEXTURE_2D, texture);
+        glActiveTexture(GL_TEXTURE0 + 1);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTextureID);
         glDrawArrays(GL_TRIANGLES, 0, proj_grid.triangles.size());
  
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -276,4 +361,32 @@ unsigned int loadShaders(string vertex_fname, string frag_fname) {
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
     return shaderProgram;
+}
+
+unsigned int loadCubemap(vector<std::string> faces) {
+    unsigned int textureID;
+    glActiveTexture(GL_TEXTURE0);
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int width, height, nrChannels;
+    for (unsigned int i = 0; i < faces.size(); i++) {
+        unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        if (data) {
+            cout << faces[i] << ", " << width << ", " << height << ", " << nrChannels << endl;
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            stbi_image_free(data);
+        }
+        else {
+            std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+            stbi_image_free(data);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return textureID;
 }

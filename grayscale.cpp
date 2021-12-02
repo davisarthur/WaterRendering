@@ -131,7 +131,7 @@ int main() {
         
         // save image
         /*
-        std::string fnameTemp = "grayscale/img" + std::to_string(n) + ".png";
+        std::string fnameTemp = "movies/grayscale/img" + std::to_string(n) + ".png";
         char fname[fnameTemp.length()];
         strcpy(fname, fnameTemp.c_str());
         saveImage(fname, window);

@@ -8,10 +8,15 @@
 #include <math.h>
 #include <iostream>
 #include <fstream>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 unsigned int loadShaders(string vertex_fname, string frag_fname);
+void saveImage(char* filepath, GLFWwindow* w);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -90,6 +95,8 @@ int main() {
     // uncomment this call to draw in wireframe polygons.
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+    int n = 0;
+
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window)) {
@@ -120,6 +127,15 @@ int main() {
         glfwSwapBuffers(window);
         glfwPollEvents();
         time += delta_time;
+
+        // save image
+        /*
+        std::string fnameTemp = "movies/render/img" + std::to_string(n) + ".png";
+        char fname[fnameTemp.length()];
+        strcpy(fname, fnameTemp.c_str());
+        saveImage(fname, window);
+        n++;
+        */
     }
 
     // optional: de-allocate all resources once they've outlived their purpose:
@@ -194,4 +210,19 @@ unsigned int loadShaders(string vertex_fname, string frag_fname) {
     glDeleteShader(fragmentShader);
     glUseProgram(shaderProgram);
     return shaderProgram;
+}
+
+void saveImage(char* filepath, GLFWwindow* w) {
+   int width, height;
+   glfwGetFramebufferSize(w, &width, &height);
+   GLsizei nrChannels = 3;
+   GLsizei stride = nrChannels * width;
+   stride += (stride % 4) ? (4 - stride % 4) : 0;
+   GLsizei bufferSize = stride * height;
+   std::vector<char> buffer(bufferSize);
+   glPixelStorei(GL_PACK_ALIGNMENT, 4);
+   glReadBuffer(GL_BACK);
+   glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, buffer.data());
+   stbi_flip_vertically_on_write(true);
+   stbi_write_png(filepath, width, height, nrChannels, buffer.data(), stride);
 }

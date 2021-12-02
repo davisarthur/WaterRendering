@@ -2,25 +2,14 @@
 out vec4 FragColor;
   
 in vec2 TexCoords;
-in vec2 xzPos;
+in vec3 vertexPosition;
+in vec3 normal;
+in vec4 color;
 
-uniform sampler2D waterTexture;
-uniform samplerCube skybox;
 uniform vec3 eye;
-uniform float maxY;
-uniform float minY;
-uniform float maxSlopeX;
-uniform float minSlopeX;
-uniform float maxSlopeZ;
-uniform float minSlopeZ;
+uniform samplerCube skybox;
 
 void main() { 
-    vec4 data = texture(waterTexture, TexCoords);
-    float height = minY + data.x * (maxY - minY);
-    float slopeX = minSlopeX + data.y * (maxSlopeX - minSlopeX);
-    float slopeZ = minSlopeZ + data.z * (maxSlopeZ - minSlopeZ);
-    vec3 vertexPosition = vec3(xzPos.x, height, xzPos.y);
-    vec3 normal = vec3(-slopeX, 1, -slopeZ);
     float nAir = 1.0;
     float nWater = 1.33;
     vec3 incidentRay = normalize(vec3(vertexPosition - eye));
@@ -43,4 +32,5 @@ void main() {
     vec4 reflectedColor = vec4(texture(skybox, reflectedRay).rgb, 1.0);
     vec4 transmittedColor = vec4(texture(skybox, transmittedRay).rgb, 1.0);
     FragColor = reflectivity * reflectedColor + (1 - reflectedColor) * transmittedColor;
+    FragColor = color;
 }

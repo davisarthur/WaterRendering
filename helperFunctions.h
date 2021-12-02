@@ -103,7 +103,11 @@ void transpose2d(vector<vector<complex<float> > > &A);
 
 string readFile(string fileName);
 
+string print_vector_real(vector<float> &A);
+
 string print_vector(vector<complex<float> > &A);
+
+string print_vector_2D_real(vector<vector<float> > &A);
 
 string print_vector_2D(vector<vector<complex<float> > > &A);
 

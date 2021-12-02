@@ -115,7 +115,7 @@ int main() {
     };
 
     // read in mesh data
-    float amplitude = 0.001;
+    float amplitude = 0.005;
     float Lx = 10.0;
     float Lz = 10.0;
     int M = 64;

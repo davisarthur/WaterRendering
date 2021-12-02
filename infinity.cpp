@@ -126,12 +126,12 @@ int main() {
     int vertexSizeData = sizeof(triangles[0].vertex1);
 
     // construct projected grid
-    int nx = 64;
-    int ny = 64;
-    float xMin = -100.0;
-    float xMax = 100.0;
-    float zMin = -100.0; 
-    float zMax = 100.0;
+    int nx = 100;
+    int ny = 100;
+    float xMin = -50.0;
+    float xMax = 50.0;
+    float zMin = -50.0; 
+    float zMax = 50.0;
     ProjectedGrid proj_grid(nx, ny, xMin, xMax, zMin, zMax);
     int numBytesWater = proj_grid.triangles.size() * 3 * sizeof(float);
     int vertexSizeWater = 3*sizeof(float);
@@ -141,7 +141,7 @@ int main() {
     float aspect = (float) SCR_WIDTH / SCR_HEIGHT;
     float znear = 0.2;
     float zfar = 100.0;
-    glm::vec3 eye = glm::vec3(-8.0, 0.5, 0.0);
+    glm::vec3 eye = glm::vec3(-8.0, 4.0, 0.0);
     glm::mat4 lookAt = glm::lookAt(eye, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
     glm::mat4 projMatrix = glm::perspective(fov, aspect, znear, zfar);
     glm::mat4 transform = projMatrix * lookAt;
@@ -287,7 +287,7 @@ int main() {
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
-        time += delta_time;
+        //time += delta_time;
     }
 
     // optional: de-allocate all resources once they've outlived their purpose:
@@ -373,7 +373,6 @@ unsigned int loadCubemap(vector<std::string> faces) {
     for (unsigned int i = 0; i < faces.size(); i++) {
         unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
         if (data) {
-            cout << faces[i] << ", " << width << ", " << height << ", " << nrChannels << endl;
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
             stbi_image_free(data);
         }

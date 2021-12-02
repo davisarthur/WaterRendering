@@ -96,8 +96,10 @@ void water_grid::eval_grids(float time) {
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < M; j++) {
             float wt = omega_grid[i][j] * time;
-            fourier_grid[i][j] = fourier_grid_t0[i][j] * complex<float>(cos(wt), sin(wt)) 
-                + conj(fourier_grid_t0[N - i - 1][M - j - 1]) * complex<float>(cos(-wt), sin(-wt)); 
+            if (i > 0 && j > 0) {
+                fourier_grid[i][j] = fourier_grid_t0[i][j] * complex<float>(cos(wt), sin(wt)) 
+                + conj(fourier_grid_t0[N - i][M - j]) * complex<float>(cos(-wt), sin(-wt)); 
+            }
         }
     }
     position_grid = fft2d(fourier_grid, 1.0);
@@ -193,9 +195,9 @@ vector<Triangle> water_grid::gen_triangles() {
         for (int j = 0; j < M - 1; j++) {
             int xhat = j * N + i;
             Vertex vertex1 = vertices.at(xhat);
-            Vertex vertex2 = vertices.at(xhat + 1);
+            Vertex vertex2 = vertices.at(xhat + N);
             Vertex vertex3 = vertices.at(xhat + N + 1);
-            Vertex vertex4 = vertices.at(xhat + N);
+            Vertex vertex4 = vertices.at(xhat + 1);
             Triangle t1; 
             t1.vertex1 = vertex1; t1.vertex2 = vertex2; t1.vertex3 = vertex3;
             Triangle t2;
@@ -310,10 +312,29 @@ string print_vector(vector<complex<float> > &A) {
     return output;
 }
 
+string print_vector_real(vector<float> &A) {
+    string output = "";
+    for (int i = 0; i < A.size() - 1; i++) {
+        float num = A.at(i);
+        output += to_string(num) + ", ";
+    }
+    float num = A.at(A.size() - 1);
+    output += to_string(num) + "\n";
+    return output;
+}
+
 string print_vector_2D(vector<vector<complex<float> > > &A) {
     string output;
     for (int i = 0; i < A.size(); i++) {
         output += print_vector(A.at(i));
+    }
+    return output;
+}
+
+string print_vector_2D_real(vector<vector<float> > &A) {
+    string output;
+    for (int i = 0; i < A.size(); i++) {
+        output += print_vector_real(A.at(i));
     }
     return output;
 }

@@ -11,6 +11,7 @@ uniform float minSlopeZ;
 uniform float maxSlopeZ;
 
 out vec3 color;
+
 void main() {
    gl_Position = transformMatrix * vec4(aPos.x, aPos.z, aPos.y, 1);
    float height = (aPos.y - miny) / (maxy - miny);

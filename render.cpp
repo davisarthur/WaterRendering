@@ -46,20 +46,17 @@ int main() {
     unsigned int shaderProgram = useShaders("shaders/source.vs", "shaders/source.fs");
 
     // read in mesh data
-    float amplitude = 0.01;
+    float amplitude = 0.001;
     float Lx = 10.0;
     float Lz = 10.0;
     int M = 64;
     int N = 64;
-    glm::vec2 wind_vector(2.0, 0.0);
+    glm::vec2 wind_vector(5.0, 0.0);
     water_grid water(amplitude, Lx, Lz, M, N, wind_vector);
     float time = 0.0;
     float fps = 30.0;
     float delta_time = 1.0 / fps;
     vector<Triangle> triangles = water.gen_triangles();
-
-    write_to_file("data/fourier_grid.txt", print_vector_2D(water.fourier_grid));
-    write_to_file("data/water_grid.txt", print_vector_2D(water.position_grid));
     
     int numBytes = triangles.size() * sizeof(triangles[0]);
     int vertexSize = sizeof(triangles[0].vertex1);

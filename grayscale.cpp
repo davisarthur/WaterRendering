@@ -49,6 +49,7 @@ int main() {
     glewInit();
 
     unsigned int shaderProgram = loadShaders("shaders/grayscale.vs", "shaders/grayscale.fs");
+    glUseProgram(shaderProgram);
 
     // read in mesh data
     float amplitude = 0.001;
@@ -89,8 +90,8 @@ int main() {
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertexSize, (void*)0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vertexSize, (void*)(sizeof(float) * 3));
-
     glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
 
     // uncomment this call to draw in wireframe polygons.
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -115,7 +116,6 @@ int main() {
         glBufferData(GL_ARRAY_BUFFER, numBytes, triangles.data(), GL_STATIC_DRAW);
 
         // draw our first triangle
-        glUseProgram(shaderProgram);
         glUniformMatrix4fv(projID, 1, GL_FALSE, glm::value_ptr(projMatrix));
         glUniform1f(minID, water.min);
         glUniform1f(maxID, water.max);
@@ -128,13 +128,15 @@ int main() {
         glfwSwapBuffers(window);
         glfwPollEvents();
         time += delta_time;
-
+        
         // save image
+        /*
         std::string fnameTemp = "grayscale/img" + std::to_string(n) + ".png";
         char fname[fnameTemp.length()];
         strcpy(fname, fnameTemp.c_str());
         saveImage(fname, window);
         n++;
+        */
     }
 
     // optional: de-allocate all resources once they've outlived their purpose:

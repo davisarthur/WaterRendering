@@ -55,7 +55,7 @@ int main() {
     glm::vec2 wind_vector(5.0, 0.0);
     water_grid water(amplitude, Lx, Lz, M, N, wind_vector);
     float time = 0.0;
-    float fps = 30.0;
+    float fps = 60.0;
     float delta_time = 1.0 / fps;
     vector<Triangle> triangles = water.gen_triangles();
     
@@ -109,7 +109,6 @@ int main() {
         glBufferData(GL_ARRAY_BUFFER, numBytes, triangles.data(), GL_STATIC_DRAW);
 
         // draw our first triangle
-        glUseProgram(shaderProgram);
         glUniformMatrix4fv(pMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));
         glUniform3f(eyeID, eye.x, eye.y, eye.z);
         glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized

@@ -11,7 +11,7 @@
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
-unsigned int useShaders(string vertex_fname, string frag_fname);
+unsigned int loadShaders(string vertex_fname, string frag_fname);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -43,7 +43,8 @@ int main() {
     // // glew: load all OpenGL function pointers
     glewInit();
 
-    unsigned int shaderProgram = useShaders("shaders/source.vs", "shaders/source.fs");
+    unsigned int shaderProgram = loadShaders("shaders/source.vs", "shaders/source.fs");
+    glUseProgram(shaderProgram);
 
     // read in mesh data
     float amplitude = 0.001;
@@ -71,14 +72,11 @@ int main() {
     glm::mat4 transformMatrix = projMatrix * lookAt;
 
     GLint pMatID = glGetUniformLocation(shaderProgram, "transformMatrix");
-    glUniformMatrix4fv(pMatID, 1, GL_FALSE, glm::value_ptr(transformMatrix));
     GLint eyeID = glGetUniformLocation(shaderProgram, "eye");
-    glUniform3f(eyeID, eye.x, eye.y, eye.z);
 
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -86,16 +84,8 @@ int main() {
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertexSize, (void*)0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vertexSize, (void*)(sizeof(float) * 3));
-
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
-
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-    //glBindBuffer(GL_ARRAY_BUFFER, 0); 
-
-    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-    //glBindVertexArray(0); 
 
     // uncomment this call to draw in wireframe polygons.
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -109,7 +99,7 @@ int main() {
 
         // render
         // ------
-        glClearColor(0.6f, 1.0f, 1.0f, 1.0f);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         // update geometry
@@ -160,7 +150,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-unsigned int useShaders(string vertex_fname, string frag_fname) {
+unsigned int loadShaders(string vertex_fname, string frag_fname) {
     string vertexShaderSourceString = readFile(vertex_fname);
     string fragmentShaderSourceString = readFile(frag_fname);
     char* vertexShaderSource = &vertexShaderSourceString[0];

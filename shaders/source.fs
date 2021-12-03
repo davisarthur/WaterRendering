@@ -8,7 +8,7 @@ out vec4 FragColor;
 
 void main() {
    vec4 transmittedColor = vec4(0.0, 0.3, 0.4, 1.0);
-   vec4 reflectedColor = vec4(0.64, 0.84, 1.0, 1.0);
+   vec4 reflectedColor = vec4(0.4, 0.6, 0.8, 1.0);
    float nAir = 1.0;
    float nWater = 1.33;
    vec3 incidentRay = normalize(vec3(vertexPosition - eye));

@@ -116,8 +116,8 @@ int main() {
 
     // read in mesh data
     float amplitude = 0.005;
-    float Lx = 10.0;
-    float Lz = 10.0;
+    float Lx = 5.0;
+    float Lz = 5.0;
     int M = 64;
     int N = 64;
     glm::vec2 wind_vector(2.0, 0.0);
@@ -133,6 +133,8 @@ int main() {
     GLint waterTransformID = glGetUniformLocation(waterShader, "transformMatrix");
     GLint eyeID = glGetUniformLocation(waterShader, "eye");
 
+    glEnable(GL_DEPTH_TEST);
+    
     // uncomment this call to draw in wireframe polygons.
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -146,9 +148,10 @@ int main() {
         // render
         // ------
         glClearColor(0.1f, 0.3f, 0.4f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // render skybox
+        glDepthMask(GL_FALSE);
         glUseProgram(skyboxShader);
         unsigned int skyboxVAO, skyboxVBO;
         glGenVertexArrays(1, &skyboxVAO);
@@ -162,6 +165,7 @@ int main() {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTextureID);
         glDrawArrays(GL_TRIANGLES, 0, 36);
+        glDepthMask(GL_TRUE);
 
         // update water
         water.eval_grids(time);

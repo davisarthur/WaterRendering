@@ -52,7 +52,7 @@ int main() {
     glUseProgram(shaderProgram);
 
     // read in mesh data
-    float amplitude = 0.01;
+    float amplitude = 0.001;
     float Lx = 10.0;
     float Lz = 10.0;
     int M = 64;
@@ -71,7 +71,7 @@ int main() {
     float aspect = (float) SCR_WIDTH / SCR_HEIGHT;
     float znear = 0.1;
     float zfar = 1000.0;
-    glm::vec3 eye = glm::vec3(8.0, 4.0, 0.0);
+    glm::vec3 eye = glm::vec3(8.0, 2.0, 0.0);
     glm::vec3 viewing = glm::vec3(0.0, 0.0, 0.0);
     glm::vec3 up = glm::vec3(0.0, 1.0, 0.0);
     glm::mat4 lookAt = glm::lookAt(eye, viewing, up);
@@ -79,10 +79,18 @@ int main() {
     glm::mat4 transformMatrix = projMatrix * lookAt;
     glm::vec3 initialViewDir = glm::normalize(viewing - eye);
     float viewDist = glm::length(viewing - eye);
+    
     float speed = 0.25;
     float mouseSensitivityY = 0.001;
     float mouseSensitivityX = 0.002;
-
+    double initialXPos, initialYPos;
+    double xpos, ypos;
+    bool controllable = false;
+    if (controllable) {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        glfwGetCursorPos(window, &initialXPos, &initialYPos);
+    }
+    
     GLint pMatID = glGetUniformLocation(shaderProgram, "transformMatrix");
     GLint eyeID = glGetUniformLocation(shaderProgram, "eye");
 
@@ -138,38 +146,39 @@ int main() {
         time += delta_time;
 
         // user controls
-        glm::vec3 viewDir = glm::normalize(viewing - eye);
-        glm::vec3 translation = glm::vec3(0.0);
-        glm::vec3 left = glm::normalize(glm::cross(up, viewDir));
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-            translation += viewDir * speed;
+        if (controllable) {
+            glm::vec3 viewDir = glm::normalize(viewing - eye);
+            glm::vec3 translation = glm::vec3(0.0);
+            glm::vec3 left = glm::normalize(glm::cross(up, viewDir));
+            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+                translation += viewDir * speed;
+            }
+            if (glfwGetKey(window, GLFW_KEY_S)) {
+                translation -= viewDir * speed;
+            }
+            if (glfwGetKey(window, GLFW_KEY_A)) {
+                translation += left * speed;
+            }
+            if (glfwGetKey(window, GLFW_KEY_D)) {
+                translation -= left * speed;
+            }
+            eye += translation;
+            viewing += translation;
+            lookAt = glm::lookAt(eye, viewing, up);
+            transformMatrix = projMatrix * lookAt;
+            
+            glfwGetCursorPos(window, &xpos, &ypos);
+            
+            // compute rotation angle
+            float eulerY = -(xpos - initialXPos) * mouseSensitivityX;
+            float eulerX = (ypos - initialYPos) * mouseSensitivityY;
+            glm::mat4 rotate = glm::mat4(1.0);
+            rotate = glm::rotate(rotate, eulerY, up);
+            rotate = glm::rotate(rotate, eulerX, left);
+            viewDir = glm::vec3(rotate * glm::vec4(initialViewDir, 1.0));
+            viewing = eye + viewDist * viewDir;
         }
-        if (glfwGetKey(window, GLFW_KEY_S)) {
-            translation -= viewDir * speed;
-        }
-        if (glfwGetKey(window, GLFW_KEY_A)) {
-            translation += left * speed;
-        }
-        if (glfwGetKey(window, GLFW_KEY_D)) {
-            translation -= left * speed;
-        }
-        eye += translation;
-        viewing += translation;
-        lookAt = glm::lookAt(eye, viewing, up);
-        transformMatrix = projMatrix * lookAt;
         
-        double xpos, ypos;
-        glfwGetCursorPos(window, &xpos, &ypos);
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        
-        // compute rotation angle
-        float eulerY = -xpos * mouseSensitivityX;
-        float eulerX = ypos * mouseSensitivityY;
-        glm::mat4 rotate = glm::mat4(1.0);
-        rotate = glm::rotate(rotate, eulerY, up);
-        rotate = glm::rotate(rotate, eulerX, left);
-        viewDir = glm::vec3(rotate * glm::vec4(initialViewDir, 1.0));
-        viewing = eye + viewDist * viewDir;
 
         // save image
         /*

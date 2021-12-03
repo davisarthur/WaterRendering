@@ -8,7 +8,6 @@ uniform samplerCube skybox;
 out vec4 FragColor;
 
 void main() {
-   vec4 transmittedColor = vec4(0.0, 0.8, 0.8, 1.0);
    float nAir = 1.0;
    float nWater = 1.33;
    vec3 incidentRay = normalize(vec3(vertexPosition - eye));
@@ -19,7 +18,7 @@ void main() {
    float r1 = sin(thetaWater - thetaAir) / sin(thetaWater + thetaAir);
    float r2 = tan(thetaWater - thetaAir) / tan(thetaWater + thetaAir);
    float reflectivity = 0.5 * (r1 * r1 + r2 * r2);
+   vec4 transmittedColor = vec4(texture(skybox, transmittedRay).rgb, 1.0);
    vec4 reflectedColor = vec4(texture(skybox, reflectedRay).rgb, 1.0);
-   vec4 trasmittedColor = vec4(texture(skybox, transmittedRay).rgb, 1.0);
    FragColor = reflectivity * reflectedColor + (1 - reflectivity) * transmittedColor;
 }

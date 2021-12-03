@@ -148,7 +148,7 @@ int main() {
     glm::mat4 skyboxTransformMatrix = projMatrix * glm::mat4(glm::mat3(lookAt));
 
     // uncomment this call to draw in wireframe polygons.
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // render loop
     // -----------
@@ -287,7 +287,7 @@ int main() {
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
-        //time += delta_time;
+        time += delta_time;
     }
 
     // optional: de-allocate all resources once they've outlived their purpose:

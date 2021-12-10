@@ -52,9 +52,9 @@ int main() {
     glUseProgram(shaderProgram);
 
     // read in mesh data
-    float amplitude = 0.001;
-    float Lx = 10.0;
-    float Lz = 10.0;
+    float amplitude = 0.005;
+    float Lx = 5.0;
+    float Lz = 5.0;
     int M = 64;
     int N = 64;
     glm::vec2 wind_vector(2.0, 0.0);

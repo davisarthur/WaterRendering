@@ -156,6 +156,10 @@ void water_grid::height_grid_fourier_t0() {
 
 vector<Vertex> water_grid::gen_vertices() {
     vector<Vertex> vertices;
+    min_slope_x = numeric_limits<float>::max();
+    max_slope_x = numeric_limits<float>::min();
+    min_slope_z = numeric_limits<float>::max();
+    max_slope_z = numeric_limits<float>::min();
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < M; j++) {
             // update min/max as necessary

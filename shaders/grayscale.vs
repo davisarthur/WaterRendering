@@ -9,7 +9,7 @@ uniform float maxy;
 out vec3 color;
 
 void main() {
-   gl_Position = proj * vec4(aPos.x, aPos.z, 0, 1);
    float ypos = (aPos.y - miny) / (maxy - miny);
+   gl_Position = proj * vec4(aPos.x, aPos.z, ypos, 1);
    color = vec3(ypos, ypos, ypos);
 }

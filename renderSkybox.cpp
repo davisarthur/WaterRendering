@@ -50,7 +50,7 @@ int main() {
     float aspect = (float) SCR_WIDTH / SCR_HEIGHT;
     float znear = 0.1;
     float zfar = 100.0;
-    glm::vec3 eye = glm::vec3(-8.0, 1.0, 0.0);
+    glm::vec3 eye = glm::vec3(-6.0, 1.0, 0.0);
     glm::mat4 lookAt = glm::lookAt(eye, glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
     glm::mat4 projMatrix = glm::perspective(fov, aspect, znear, zfar);
     glm::mat4 waterTransformMatrix = projMatrix * lookAt;

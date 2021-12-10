@@ -17,13 +17,9 @@ out vec3 normal;
 out vec4 color;
 
 void main() {
-    vec2 TexCoords = vec2(aPos.x / Lx + Lx / 2.0, aPos.z / Lz + Lz / 2.0);
+    vec2 TexCoords = vec2(aPos.x, aPos.z);
     vec4 data = texture(waterTexture, TexCoords);
-    float height = minY + data.x * (maxY - minY);
-    float slopeX = minSlopeX + data.y * (maxSlopeX - minSlopeX);
-    float slopeZ = minSlopeZ + data.z * (maxSlopeZ - minSlopeZ);
-    vertexPosition = vec3(aPos.x, height, aPos.z);
-    normal = normalize(vec3(-slopeX, 1, -slopeZ));
+    vertexPosition = vec3(aPos.x, data.x * 10.0, aPos.z);
     gl_Position = transform * vec4(vertexPosition, 1);
-    color = vec4(data.x, 0, 0, 1);
+    color = data;
 }  

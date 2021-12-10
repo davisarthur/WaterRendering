@@ -47,73 +47,15 @@ int main() {
     glewInit();
 
     // load data shader
-    unsigned int dataShader = loadShaders("shaders/data.vs", "shaders/data.fs");
+    unsigned int dataShader = loadShaders("shaders/data2.vs", "shaders/data2.fs");
 
     // load water shader
-    unsigned int waterShader = loadShaders("shaders/water.vs", "shaders/water.fs");
-
-    // load skybox shader
-    unsigned int skyboxShader = loadShaders("shaders/skybox.vs", "shaders/skybox.fs");
-
-    // create cube map
-    vector<string> faces;
-    faces.push_back("skybox/right.jpg");
-    faces.push_back("skybox/left.jpg");
-    faces.push_back("skybox/top.jpg");
-    faces.push_back("skybox/bottom.jpg");
-    faces.push_back("skybox/front.jpg");
-    faces.push_back("skybox/back.jpg");
-    unsigned int cubemapTextureID = loadCubemap(faces);
-
-    float skyboxVertices[] = {
-        // positions          
-        -1.0f,  1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-
-        -1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f,  1.0f,
-        1.0f,  1.0f,  1.0f,
-        1.0f,  1.0f,  1.0f,
-        1.0f,  1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-
-        -1.0f, -1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-        1.0f,  1.0f,  1.0f,
-        1.0f,  1.0f,  1.0f,
-        1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-        -1.0f,  1.0f, -1.0f,
-        1.0f,  1.0f, -1.0f,
-        1.0f,  1.0f,  1.0f,
-        1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f, -1.0f,
-
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-        1.0f, -1.0f,  1.0f
-    };
+    unsigned int waterShader = loadShaders("shaders/water2.vs", "shaders/water2.fs");
 
     // construct water
-    float amplitude = 0.01;
-    float Lx = 5.0;
-    float Lz = 5.0;
+    float amplitude = 0.0;
+    float Lx = 1.0;
+    float Lz = 1.0;
     int M = 64;
     int N = 64;
     glm::vec2 wind_vector(2.0, 0.0);
@@ -126,8 +68,8 @@ int main() {
     int vertexSizeData = sizeof(triangles[0].vertex1);
 
     // construct projected grid
-    int nx = 100;
-    int ny = 100;
+    int nx = 16;
+    int ny = 16;
     float xMin = -Lx / 2.0;
     float xMax = Lx / 2.0;
     float zMin = -Lz / 2.0; 
@@ -147,27 +89,22 @@ int main() {
     glm::mat4 lookAt = glm::lookAt(eye, viewing, up);
     glm::mat4 projMatrix = glm::perspective(fov, aspect, znear, zfar);
     glm::mat4 waterTransform = projMatrix * lookAt;
-    glm::mat4 skyboxTransform = projMatrix * glm::mat4(glm::mat3(lookAt));
-    glm::mat4 dataTransform = glm::ortho(-Lx / 2.0f, Lx / 2.0f, -Lz / 2.0f, Lz / 2.0f, -10.0f, 10.0f);
+    glm::mat4 dataTransform = glm::ortho(-Lx / 2.0f, Lx / 2.0f - 2 * Lx / N, -Lz / 2.0f, Lz / 2.0f - 2 * Lz / M, -10.0f, 10.0f);
     glm::vec3 initialViewDir = glm::normalize(viewing - eye);
     float viewDist = glm::length(viewing - eye);
     float speed = 0.25;
-    float mouseSensitivity = 0.1f;
+    float mouseSensitivityY = 0.001;
+    float mouseSensitivityX = 0.002;
     double initialXPos, initialYPos;
     double xpos, ypos;
-    float yaw = 0.0f;
-    float pitch = 0.0f;
-    double lastX;
-    double lastY;
     bool controllable = true;
+    bool wireframe = false;
     if (controllable) {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         glfwGetCursorPos(window, &initialXPos, &initialYPos);
     }
-    glfwGetCursorPos(window, &lastX, &lastY);
 
-    // uncomment this call to draw in wireframe polygons.
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glEnable(GL_DEPTH_TEST); 
 
     // render loop
     // -----------
@@ -179,7 +116,7 @@ int main() {
         // render
         // ------
         glClearColor(0.6f, 1.0f, 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // update geometry
         water.eval_grids(time);
@@ -194,11 +131,9 @@ int main() {
         unsigned int texture;
         glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 600, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
         // attach texture to frame buffer
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
@@ -240,22 +175,6 @@ int main() {
         glDrawArrays(GL_TRIANGLES, 0, triangles.size() * 3);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        // render skybox
-        glUseProgram(skyboxShader);
-        unsigned int skyboxVAO, skyboxVBO;
-        glGenVertexArrays(1, &skyboxVAO);
-        glGenBuffers(1, &skyboxVBO);
-        glBindVertexArray(skyboxVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
-        GLint skyboxTransformID = glGetUniformLocation(skyboxShader, "transformMatrix");
-        glUniformMatrix4fv(skyboxTransformID, 1, GL_FALSE, glm::value_ptr(skyboxTransform));
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTextureID);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-
         // draw water on projected grid
         unsigned int waterVBO, waterVAO;
         glGenVertexArrays(1, &waterVAO);
@@ -296,8 +215,6 @@ int main() {
         // bind texture
         glActiveTexture(GL_TEXTURE0 + 0); // Texture unit 0
         glBindTexture(GL_TEXTURE_2D, texture);
-        glActiveTexture(GL_TEXTURE0 + 1);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTextureID);
         glDrawArrays(GL_TRIANGLES, 0, proj_grid.triangles.size());
  
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -311,6 +228,15 @@ int main() {
             glm::vec3 viewDir = glm::normalize(viewing - eye);
             glm::vec3 translation = glm::vec3(0.0);
             glm::vec3 left = glm::normalize(glm::cross(up, viewDir));
+            if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
+                if (!wireframe) {
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                }
+                else {
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                }
+                wireframe = !wireframe;
+            } 
             if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
                 translation += viewDir * speed;
             }
@@ -327,30 +253,16 @@ int main() {
             viewing += translation;
             lookAt = glm::lookAt(eye, viewing, up);
             waterTransform = projMatrix * lookAt;
-            skyboxTransform = projMatrix * glm::mat4(glm::mat3(lookAt));
             
             glfwGetCursorPos(window, &xpos, &ypos);
-            float xOffset = xpos - lastX;
-            float yOffset = ypos - lastY;
-            lastX = xpos;
-            lastY = ypos;
-
-            yaw += mouseSensitivity * xOffset;
-            pitch += mouseSensitivity * yOffset;
-
-            // clamp pitch
-            if (pitch > 60.0f) {
-                pitch = 60.0f;
-            }
-            else if (pitch < -60.0f) {
-                pitch = -60.0f;
-            }
-
-            // view direction
-            viewDir.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-            viewDir.y = sin(glm::radians(pitch));
-            viewDir.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-            viewDir = glm::normalize(viewDir);
+            
+            // compute rotation angle
+            float eulerY = -(xpos - initialXPos) * mouseSensitivityX;
+            float eulerX = (ypos - initialYPos) * mouseSensitivityY;
+            glm::mat4 rotate = glm::mat4(1.0);
+            rotate = glm::rotate(rotate, eulerY, up);
+            rotate = glm::rotate(rotate, eulerX, left);
+            viewDir = glm::vec3(rotate * glm::vec4(initialViewDir, 1.0));
             viewing = eye + viewDist * viewDir;
         }
     }

@@ -23,8 +23,8 @@ void main() {
    // caustics
    vec3 up = vec3(0.0, 1.0, 0.0);
    vec3 causticRay = refract(up, -normal, nWater / nAir);
-   float causticBrightness = pow(dot(causticRay, up), 1000);
+   float causticBrightness = pow(dot(causticRay, up), 1500);
    vec3 causticColor = vec3(1.0, 1.0, 1.0);
 
-   FragColor = vec4(reflectivity * reflectedColor + (1 - reflectivity) * transmittedColor + 0.4 * causticColor * causticBrightness, 1);
+   FragColor = vec4(reflectivity * reflectedColor + (1 - reflectivity) * transmittedColor + 0.25 * causticColor * causticBrightness, 1);
 }

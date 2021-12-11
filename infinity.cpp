@@ -111,9 +111,9 @@ int main() {
     };
 
     // construct water
-    float amplitude = 0.01;
-    float Lx = 5.0;
-    float Lz = 5.0;
+    float amplitude = 0.003;
+    float Lx = 20.0;
+    float Lz = 20.0;
     int M = 64;
     int N = 64;
     glm::vec2 wind_vector(2.0, 0.0);
@@ -126,12 +126,13 @@ int main() {
     int vertexSizeData = sizeof(triangles[0].vertex1);
 
     // construct projected grid
-    int nx = 100;
-    int ny = 100;
-    float xMin = -Lx / 2.0;
-    float xMax = Lx / 2.0;
-    float zMin = -Lz / 2.0; 
-    float zMax = Lz / 2.0;
+    int nx = 500;
+    int ny = 500;
+    float mapSize = 20.0;
+    float xMin = - mapSize * Lx / 2.0;
+    float xMax = mapSize * Lx / 2.0;
+    float zMin = -mapSize * Lz / 2.0; 
+    float zMax = mapSize / 2.0;
     ProjectedGrid proj_grid(nx, ny, xMin, xMax, zMin, zMax);
     int numBytesWater = proj_grid.triangles.size() * 3 * sizeof(float);
     int vertexSizeWater = 3 * sizeof(float);

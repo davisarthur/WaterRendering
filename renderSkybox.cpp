@@ -120,7 +120,7 @@ int main() {
     float Lz = 5.0;
     int M = 64;
     int N = 64;
-    glm::vec2 wind_vector(2.0, 0.0);
+    glm::vec2 wind_vector(5.0, 0.0);
     water_grid water(amplitude, Lx, Lz, M, N, wind_vector);
     float time = 0.0;
     float fps = 30.0;

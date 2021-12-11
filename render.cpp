@@ -52,7 +52,7 @@ int main() {
     glUseProgram(shaderProgram);
 
     // read in mesh data
-    float amplitude = 0.005;
+    float amplitude = 0.003;
     float Lx = 5.0;
     float Lz = 5.0;
     int M = 64;

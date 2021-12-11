@@ -13,14 +13,9 @@ uniform float maxSlopeZ;
 out vec3 color;
 
 void main() {
-   /*
    gl_Position = proj * vec4(aPos.x, aPos.z, aPos.y, 1);
    float height = (aPos.y - miny) / (maxy - miny);
    float slopeX = (slopeVec.x - minSlopeX) / (maxSlopeX - minSlopeX);
    float slopeZ = (slopeVec.z - minSlopeZ) / (maxSlopeZ - minSlopeZ);
    color = vec3(height, slopeX, slopeZ);
-   */
-   gl_Position = proj * vec4(aPos.x, aPos.z, 0, 1);
-   float ypos = (aPos.y - miny) / (maxy - miny);
-   color = vec3(ypos, ypos, ypos);
 }

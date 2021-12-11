@@ -19,7 +19,7 @@ void main() {
     float r1 = sin(thetaWater - thetaAir) / sin(thetaWater + thetaAir);
     float r2 = tan(thetaWater - thetaAir) / tan(thetaWater + thetaAir);
     float reflectivity = 0.5 * (r1 * r1 + r2 * r2);
-    vec4 reflectedColor = vec4(texture(skybox, reflectedRay).rgb, 1.0);
-    vec4 transmittedColor = vec4(texture(skybox, transmittedRay).rgb, 1.0);
-    FragColor = reflectivity * reflectedColor + (1 - reflectedColor) * transmittedColor;
+    vec3 transmittedColor = vec3(texture(skybox, transmittedRay).rgb);
+    vec3 reflectedColor = vec3(texture(skybox, reflectedRay).rgb);
+    FragColor = vec4(reflectivity * reflectedColor + (1 - reflectivity) * transmittedColor, 1.0);
 }
